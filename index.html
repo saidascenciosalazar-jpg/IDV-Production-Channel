@@ -1853,70 +1853,152 @@ function initHistorico() {
 // ══════════════════════════════════════════════════════════════════
 // TIPOS DE REQUEST PAGE — actualizar WEEKLY_DATA cada semana
 // ══════════════════════════════════════════════════════════════════
-// WEEKLY_DATA: agrega una entrada nueva cada semana.
-// Cada entrada tiene: label (título), n (total de requests), y types (array de temas).
-// Los types ya deben estar ordenados de mayor a menor por count.
+// Cada semana: agregar nueva entrada a WEEKLY_DATA con:
+//   label, n (total), types (ordenados desc por count)
+// Cada type puede tener subtemas: [{ label, count }]
 const WEEKLY_DATA = [
   {
     label: 'Semana 1 · Lun 8 – Dom 14 Jun 2026',
     n: 334,
     types: [
-      { label: 'General Second Opinion',    count: 139 },
-      { label: 'Process Clarification',     count: 81  },
-      { label: 'ID/DL Second Opinion',      count: 64  },
-      { label: 'Selfie Second Opinion',     count: 29  },
-      { label: 'Possible Misrouted Case',   count: 9   },
-      { label: 'HSL Concern Verification',  count: 9   },
-      { label: 'Seattle Dasher / Flag Spec+', count: 3 },
+      { label: 'General Second Opinion', count: 139, subtemas: [
+        { label: 'PII Mismatch (egregious vs non-egregious)',     count: 49 },
+        { label: 'Verificar si selfie e ID son la misma persona', count: 28 },
+        { label: 'Incorrectly declined confirmation',             count: 24 },
+        { label: 'Multiple faces / 1-tile mismatch',             count: 17 },
+        { label: 'Cuenta antes de 2022 / outdated logic',        count: 12 },
+        { label: 'Underage + otro issue combinado',              count:  9 },
+      ]},
+      { label: 'Process Clarification', count: 81, subtemas: [
+        { label: 'Flujo Multiple Faces / 1-tile MM (nuevo wiki)', count: 19 },
+        { label: 'Sin email / FEM page / PII en SFDC',           count: 15 },
+        { label: 'Status codes (644/646/676) — qué hacer',       count: 14 },
+        { label: 'Merge vs rework del caso',                     count: 11 },
+        { label: 'ToF / selección de outcome correcto',          count: 10 },
+        { label: 'Dudas sobre cambios recientes al wiki',        count:  8 },
+        { label: 'Errores de sistema (Starting Point / FEM)',    count:  4 },
+      ]},
+      { label: 'ID/DL Second Opinion', count: 64, subtemas: [
+        { label: 'DL potencialmente doctored / manipulada',      count: 22 },
+        { label: 'Electronic Replica (ER) DL',                   count: 14 },
+        { label: 'DL ilegible / blurry',                         count: 13 },
+        { label: 'DL inválida / expirada / tipo no reconocido',  count: 10 },
+        { label: 'ID no estándar (paper, permiso, pasaporte…)',  count:  5 },
+      ]},
+      { label: 'Selfie Second Opinion', count: 29, subtemas: [
+        { label: 'Match selfie vs ID (¿misma persona?)',         count: 11 },
+        { label: 'Multiple faces / 1-tile MM en selfie',         count: 10 },
+        { label: 'Electronic Replica (ER) selfie',               count:  5 },
+        { label: 'Selfie poco clara / calidad de imagen',        count:  3 },
+      ]},
+      { label: 'Possible Misrouted Case', count: 9, subtemas: [
+        { label: 'Sin MQ blocker / no corresponde a IDV',        count:  7 },
+        { label: 'Chat THQ indica otro departamento',            count:  2 },
+      ]},
+      { label: 'HSL Concern Verification', count: 9, subtemas: [
+        { label: 'Dasher dormido, otro toma la foto',            count:  5 },
+        { label: 'Alguien mueve / sostiene la cara del Dasher',  count:  3 },
+        { label: 'Otro indicador HSL',                           count:  1 },
+      ]},
+      { label: 'Seattle Dasher / Flag Spec+', count: 3, subtemas: [] },
     ]
   },
   {
     label: 'Semana 2 · Lun 15 – Dom 21 Jun 2026',
     n: 307,
     types: [
-      { label: 'General Second Opinion',    count: 130 },
-      { label: 'Process Clarification',     count: 72  },
-      { label: 'ID/DL Second Opinion',      count: 64  },
-      { label: 'Selfie Second Opinion',     count: 26  },
-      { label: 'Possible Misrouted Case',   count: 10  },
-      { label: 'HSL Concern Verification',  count: 4   },
-      { label: 'Seattle Dasher / Flag Spec+', count: 1 },
+      { label: 'General Second Opinion', count: 130, subtemas: [
+        { label: 'PII Mismatch (egregious vs non-egregious)',     count: 46 },
+        { label: 'Verificar si selfie e ID son la misma persona', count: 25 },
+        { label: 'Incorrectly declined confirmation',             count: 23 },
+        { label: 'Multiple faces / 1-tile mismatch',             count: 15 },
+        { label: 'Cuenta antes de 2022 / outdated logic',        count: 11 },
+        { label: 'Underage + otro issue combinado',              count: 10 },
+      ]},
+      { label: 'Process Clarification', count: 72, subtemas: [
+        { label: 'Flujo Multiple Faces / 1-tile MM (nuevo wiki)', count: 17 },
+        { label: 'Sin email / FEM page / PII en SFDC',           count: 14 },
+        { label: 'Status codes (644/646/676) — qué hacer',       count: 12 },
+        { label: 'Merge vs rework del caso',                     count: 10 },
+        { label: 'ToF / selección de outcome correcto',          count: 10 },
+        { label: 'Dudas sobre cambios recientes al wiki',        count:  7 },
+        { label: 'Errores de sistema (Starting Point / FEM)',    count:  2 },
+      ]},
+      { label: 'ID/DL Second Opinion', count: 64, subtemas: [
+        { label: 'DL potencialmente doctored / manipulada',      count: 21 },
+        { label: 'Electronic Replica (ER) DL',                   count: 14 },
+        { label: 'DL ilegible / blurry',                         count: 13 },
+        { label: 'DL inválida / expirada / tipo no reconocido',  count: 10 },
+        { label: 'ID no estándar (paper, permiso, pasaporte…)',  count:  6 },
+      ]},
+      { label: 'Selfie Second Opinion', count: 26, subtemas: [
+        { label: 'Match selfie vs ID (¿misma persona?)',         count: 10 },
+        { label: 'Multiple faces / 1-tile MM en selfie',         count:  9 },
+        { label: 'Electronic Replica (ER) selfie',               count:  4 },
+        { label: 'Selfie poco clara / calidad de imagen',        count:  3 },
+      ]},
+      { label: 'Possible Misrouted Case', count: 10, subtemas: [
+        { label: 'Sin MQ blocker / no corresponde a IDV',        count:  8 },
+        { label: 'Chat THQ indica otro departamento',            count:  2 },
+      ]},
+      { label: 'HSL Concern Verification', count: 4, subtemas: [
+        { label: 'Dasher dormido, otro toma la foto',            count:  2 },
+        { label: 'Alguien mueve / sostiene la cara del Dasher',  count:  1 },
+        { label: 'Otro indicador HSL',                           count:  1 },
+      ]},
+      { label: 'Seattle Dasher / Flag Spec+', count: 1, subtemas: [] },
     ]
   },
   // Semana 3, 4... se agregan aquí con el mismo formato
 ];
 
 function initTipos() {
-  // Renderiza las dos primeras semanas (W1 y W2)
   renderSemana('tipos-w1', 'tipos-w1-total', WEEKLY_DATA[0]);
   renderSemana('tipos-w2', 'tipos-w2-total', WEEKLY_DATA[1]);
 }
 
 function renderSemana(containerId, totalId, data) {
-  const { label, n, types } = data;
-  // Total label
+  const { n, types } = data;
   document.getElementById(totalId).textContent = n + ' requests en total';
 
-  // Build rows — sorted already, just render
+  const rankColors = ['#E3175B','#2563EB','#0E9663','#D97706','#7C3AED','#0891B2','#6B7280'];
+
   const rows = types.map((t, i) => {
-    const pct = (100 * t.count / n).toFixed(1);
-    const barW = (100 * t.count / types[0].count).toFixed(1);
-    const rankColors = ['#E3175B','#2563EB','#0E9663','#D97706','#7C3AED','#0891B2','#6B7280'];
+    const pct   = (100 * t.count / n).toFixed(1);
+    const barW  = (100 * t.count / types[0].count).toFixed(1);
     const color = rankColors[i] || '#9ca3af';
+
+    // Subtemas rows
+    const subRows = (t.subtemas && t.subtemas.length) ? t.subtemas.map(s => {
+      const sp = (100 * s.count / t.count).toFixed(1);
+      return `
+        <tr style="background:var(--bg)">
+          <td></td>
+          <td style="padding:5px 8px 5px 20px;border-left:2px solid ${color}22">
+            <span style="font-size:11px;color:var(--text2)">↳ ${s.label}</span>
+          </td>
+          <td style="text-align:right;white-space:nowrap;padding-left:12px">
+            <span style="font-size:11px;font-weight:600;color:var(--text)">${s.count}</span>
+            <span style="font-size:10px;color:var(--text3);margin-left:4px">${sp}%</span>
+          </td>
+        </tr>`;
+    }).join('') : '';
+
     return `
-      <tr>
-        <td style="width:24px;color:${color};font-weight:700;font-size:12px">${i+1}</td>
+      <tr style="border-top:1px solid var(--border)">
+        <td style="width:22px;padding:10px 4px 10px 0;color:${color};font-weight:700;font-size:12px;vertical-align:top">${i+1}</td>
         <td style="padding:10px 8px">
           <div style="font-weight:600;font-size:13px;margin-bottom:5px">${t.label}</div>
           <div style="background:var(--bg);border-radius:4px;height:6px;overflow:hidden">
             <div style="background:${color};height:100%;width:${barW}%;border-radius:4px"></div>
           </div>
         </td>
-        <td style="text-align:right;white-space:nowrap;padding-left:12px">
+        <td style="text-align:right;white-space:nowrap;padding-left:12px;vertical-align:top;padding-top:10px">
           <span style="font-weight:700;font-size:14px">${t.count}</span>
           <div style="font-size:11px;color:var(--text2)">${pct}%</div>
         </td>
-      </tr>`;
+      </tr>
+      ${subRows}`;
   }).join('');
 
   document.getElementById(containerId).innerHTML = `
