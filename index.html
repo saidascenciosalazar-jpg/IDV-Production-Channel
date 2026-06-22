@@ -295,6 +295,9 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
     <div class="nav-item" onclick="showPage('tiempos',this)">
       <span class="icon">⏱</span> Registro de Tiempos
     </div>
+    <div class="nav-item" onclick="showPage('porhora',this)">
+      <span class="icon">🕐</span> Requests por Hora
+    </div>
 
     <div class="nav-section" style="margin-top:8px">Análisis</div>
     <div class="nav-item" onclick="showPage('gaps',this)">
@@ -450,6 +453,65 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
       <p class="note">* Tiempo Respuesta = promedio medido por specialist desde threads reales (1 muestra/specialist).
         "est" = timestamp de claim estimado basado en promedio del specialist. Total = Claim + Respuesta.</p>
     </div>
+  </div>
+</div>
+
+<!-- ── PAGE: POR HORA ─────────────────────────────────────────── -->
+<div id="page-porhora" class="page">
+  <div class="page-header">
+    <div><h1>Requests por Hora</h1><div class="sub">Volumen de requests recibidos por hora del día · 7:00 AM – 10:00 PM CDMX</div></div>
+    <div class="chips">
+      <select id="hour-filter-day" onchange="renderHourPage()" style="height:28px;font-size:11px;border-radius:6px;border:1px solid var(--border);padding:0 8px;background:var(--card)">
+        <option value="">Toda la semana</option>
+      </select>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- KPI cards: pico, valle, hora más tranquila -->
+    <div class="kpi-row" id="hour-kpis"></div>
+
+    <!-- Gráfica principal: requests por hora -->
+    <div class="card">
+      <div class="card-title" id="hour-chart-title">📊 Total de requests por hora del día — semana completa</div>
+      <div class="chart-box-lg"><canvas id="chart-by-hour"></canvas></div>
+    </div>
+
+    <!-- Heatmap hora × día -->
+    <div class="card">
+      <div class="card-title">🗓 Heatmap — Requests por hora × día</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
+        Cada celda muestra cuántos requests llegaron en esa hora ese día. Más oscuro = más volumen.
+      </div>
+      <div style="overflow-x:auto">
+        <div id="hour-heatmap" style="display:grid;gap:3px;min-width:600px"></div>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--text2);flex-wrap:wrap;align-items:center">
+        <span><span style="display:inline-block;width:14px;height:14px;background:#F2F3F5;border:1px solid #ddd;border-radius:3px;vertical-align:middle;margin-right:4px"></span>Sin actividad</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#BFDBFE;border-radius:3px;vertical-align:middle;margin-right:4px"></span>1–3</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#60A5FA;border-radius:3px;vertical-align:middle;margin-right:4px"></span>4–7</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#2563EB;border-radius:3px;vertical-align:middle;margin-right:4px"></span>8–12</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#1E3A8A;border-radius:3px;vertical-align:middle;margin-right:4px"></span>13+</span>
+      </div>
+    </div>
+
+    <!-- Tabla detalle por hora -->
+    <div class="card">
+      <div class="card-title">📋 Detalle por hora</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Hora (CDMX)</th>
+            <th style="text-align:right">Requests</th>
+            <th style="text-align:right">% del total</th>
+            <th style="text-align:right">Avg claim time</th>
+            <th>Volumen</th>
+          </tr></thead>
+          <tbody id="tbl-by-hour"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1157,6 +1219,130 @@ function sortTable(id, col) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// REQUESTS POR HORA PAGE
+// ══════════════════════════════════════════════════════════════════
+let hourChart = null;
+
+function initHourPage() {
+  const sel = document.getElementById('hour-filter-day');
+  WEEK.days.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = WEEK.dayNames[d];
+    sel.appendChild(opt);
+  });
+  renderHourPage();
+}
+
+function renderHourPage() {
+  const filterDay = document.getElementById('hour-filter-day')?.value || '';
+  const recs = filterDay ? DATA.filter(r => r.day === +filterDay) : DATA;
+
+  const hours = [];
+  for (let h = OPS_H0; h < OPS_H1; h++) hours.push(h);
+
+  const hourData = hours.map(h => {
+    const cdmx = h + 1;
+    const bucket = recs.filter(r => Math.floor((r.sub - DS[r.day]) / 3600) === h);
+    const avgCs = bucket.length ? Math.round(bucket.reduce((a,r) => a+r.cs,0)/bucket.length) : 0;
+    return { h, cdmx, label: `${String(cdmx).padStart(2,'0')}:00`, count: bucket.length, avgCs };
+  });
+
+  const total = hourData.reduce((a,h) => a+h.count, 0);
+  const maxCount = Math.max(...hourData.map(h => h.count));
+  const peakHour = hourData.reduce((a,b) => b.count > a.count ? b : a);
+  const active = hourData.filter(h => h.count > 0);
+  const quietHour = active.length ? active.reduce((a,b) => b.count < a.count ? b : a) : null;
+  const avgPerHour = active.length ? (total / active.length).toFixed(1) : 0;
+
+  // KPI cards
+  document.getElementById('hour-kpis').innerHTML = [
+    { val: peakHour.label,         lbl: '⚡ Hora pico',           sub: `${peakHour.count} requests`, bar: '#E3175B' },
+    { val: quietHour?.label || '—',lbl: '😴 Hora más tranquila',  sub: `${quietHour?.count||0} requests`, bar: '#2563EB' },
+    { val: avgPerHour,             lbl: '📊 Promedio por hora',    sub: 'horas con actividad', bar: '#0E9663' },
+    { val: total,                  lbl: '📦 Total requests',       sub: filterDay ? WEEK.dayNames[+filterDay] : 'semana completa', bar: '#D97706' },
+  ].map(k => `
+    <div class="kpi-card" style="border-top-color:${k.bar}">
+      <div class="kpi-val" style="color:${k.bar}">${k.val}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('hour-chart-title').textContent =
+    '📊 Total de requests por hora del día — ' +
+    (filterDay ? WEEK.dayNames[+filterDay] : 'semana completa');
+
+  // Bar chart
+  if (hourChart) hourChart.destroy();
+  const colors = hourData.map(h =>
+    h.count === maxCount && maxCount > 0 ? '#E3175B' :
+    h.count >= maxCount * 0.7 ? '#FB7185' :
+    h.count >= maxCount * 0.4 ? '#2563EB' : '#93C5FD'
+  );
+  hourChart = new Chart(document.getElementById('chart-by-hour').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: hourData.map(h => h.label),
+      datasets: [{ data: hourData.map(h => h.count), backgroundColor: colors, borderRadius: 5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => `${ctx.raw} requests`,
+          afterLabel: ctx => {
+            const h = hourData[ctx.dataIndex];
+            return h.avgCs > 0 ? `Avg claim: ${fmtTime(h.avgCs)}` : '';
+          }
+        }}
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#F2F3F5' }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Heatmap hora × día
+  const hmDays = filterDay ? [+filterDay] : WEEK.days;
+  const hmap = document.getElementById('hour-heatmap');
+  hmap.style.gridTemplateColumns = `60px repeat(${hmDays.length}, 1fr)`;
+  hmap.innerHTML = `<div style="font-size:10px;font-weight:700;color:var(--text2);padding:3px 4px">Hora</div>` +
+    hmDays.map(d => `<div style="font-size:10px;font-weight:700;color:var(--text2);text-align:center;padding:3px 4px">${WEEK.dayShort[d]}</div>`).join('');
+
+  const cellColor = n => n===0?'#F2F3F5':n<=3?'#BFDBFE':n<=7?'#60A5FA':n<=12?'#2563EB':'#1E3A8A';
+
+  hours.forEach(h => {
+    const cdmx = h + 1;
+    hmap.innerHTML += `<div style="font-size:10px;color:var(--text3);text-align:right;padding:3px 6px 3px 0;display:flex;align-items:center;justify-content:flex-end">${String(cdmx).padStart(2,'0')}:00</div>`;
+    hmDays.forEach(d => {
+      const cnt = DATA.filter(r => r.day===d && Math.floor((r.sub-DS[r.day])/3600)===h).length;
+      const bg = cellColor(cnt);
+      const color = cnt > 7 ? 'white' : 'var(--text)';
+      hmap.innerHTML += `<div style="background:${bg};color:${color};border-radius:4px;text-align:center;font-size:10px;font-weight:700;height:26px;line-height:26px" title="${WEEK.dayNames[d]} ${String(cdmx).padStart(2,'0')}:00 — ${cnt} requests">${cnt||''}</div>`;
+    });
+  });
+
+  // Detail table
+  document.getElementById('tbl-by-hour').innerHTML = hourData.map(h => {
+    const pct = total > 0 ? ((h.count/total)*100).toFixed(1) : '0.0';
+    const barW = maxCount > 0 ? ((h.count/maxCount)*100).toFixed(1) : 0;
+    const isPeak = h.count === maxCount && h.count > 0;
+    return `<tr style="${isPeak?'background:#fff5f7':''}">
+      <td style="font-family:monospace;font-weight:${isPeak?700:400}">${h.label}${isPeak?' <span class="pill pill-red" style="font-size:10px;padding:1px 5px">pico</span>':''}</td>
+      <td style="text-align:right;font-weight:700">${h.count||'—'}</td>
+      <td style="text-align:right;color:var(--text2)">${h.count>0?pct+'%':'—'}</td>
+      <td style="text-align:right">${h.avgCs>0?`<span class="pill ${h.avgCs>=900?'pill-red':h.avgCs>=300?'pill-amber':'pill-green'}">${fmtTime(h.avgCs)}</span>`:'—'}</td>
+      <td style="min-width:120px">
+        <div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${barW}%;background:${isPeak?'#E3175B':'#2563EB'};border-radius:4px"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
 // GAPS PAGE — focuses on requests that took >15 min to be claimed
 // ══════════════════════════════════════════════════════════════════
 const GAP_THRESHOLD = 900; // 15 minutes in seconds
@@ -1433,6 +1619,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initResumen();
   initRespondedor();
   renderTimesTable();
+  initHourPage();
   initGaps();
   initPendientes();
   initHistorico();
