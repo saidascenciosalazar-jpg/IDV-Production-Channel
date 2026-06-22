@@ -290,7 +290,7 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
       <span class="icon">📋</span> Resumen Semanal <span class="badge-count" id="badge-total">—</span>
     </div>
     <div class="nav-item" onclick="showPage('respondedor',this)">
-      <span class="icon">👤</span> Por Respondedor
+      <span class="icon">👤</span> SME / Specialists <span class="badge-count" id="badge-unresolved" style="display:none"></span>
     </div>
     <div class="nav-item" onclick="showPage('tiempos',this)">
       <span class="icon">⏱</span> Registro de Tiempos
@@ -308,6 +308,9 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
     </div>
     <div class="nav-item" onclick="showPage('historico',this)">
       <span class="icon">📈</span> Histórico Semanal
+    </div>
+    <div class="nav-item" onclick="showPage('tipos',this)">
+      <span class="icon">🗂️</span> Tipos de Request
     </div>
   </nav>
 
@@ -368,7 +371,7 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
 <!-- ── PAGE: RESPONDEDOR ──────────────────────────────────────── -->
 <div id="page-respondedor" class="page">
   <div class="page-header">
-    <div><h1>Por Respondedor</h1><div class="sub">Selecciona un specialist para ver su actividad detallada</div></div>
+    <div><h1>SME / Specialists</h1><div class="sub">Selecciona un specialist para ver su actividad detallada · Todos los casos = ✅ Claimed + Resolved</div></div>
   </div>
   <div class="content">
     <div class="ctrl-row">
@@ -380,8 +383,15 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
     <div id="sme-detail-placeholder" class="info-box" style="text-align:center;padding:40px;color:var(--text3)">
       Selecciona un specialist del menú desplegable para ver su detalle completo.
     </div>
+    <div class="alert alert-ok" style="font-size:11px">
+      ✅ <strong>Todos los registros de este dashboard son casos Claimed + Resolved.</strong>
+      Los datos se extraen buscando <code>clicked Resolved</code> en Slack — esto confirma que el SME
+      tomó el caso <strong>y</strong> lo marcó como resuelto. No se incluyen casos sin resolver.
+    </div>
     <div id="sme-detail" style="display:none">
       <div class="sme-stat-row" id="sme-kpis"></div>
+      <!-- Claimed sin Resolved -->
+      <div id="sme-unresolved-wrap"></div>
       <div class="grid-2">
         <div class="card">
           <div class="card-title">Claims por día</div>
@@ -390,7 +400,7 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
         <div class="card" style="overflow:auto;max-height:360px">
           <div class="card-title">Detalle de todos sus requests</div>
           <table>
-            <thead><tr><th>Día</th><th>Hora envío</th><th style="text-align:right">⏱ Claim</th><th style="text-align:right">💬 Respuesta</th><th style="text-align:right">Total</th></tr></thead>
+            <thead><tr><th>Día</th><th>Hora envío (CDMX)</th><th style="text-align:right">⏱ Claim</th><th style="text-align:right">💬 Respuesta</th><th style="text-align:right">Total</th><th>Estado</th></tr></thead>
             <tbody id="sme-req-tbl"></tbody>
           </table>
         </div>
@@ -728,6 +738,37 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PESTAÑA: TIPOS DE REQUEST                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="page-tipos" class="page">
+  <div class="page-header">
+    <div><h1>Tipos de Request</h1><div class="sub">Temas más recurrentes por semana · #mq-idv-production</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <!-- Semana 1 -->
+    <div class="card" style="padding:20px">
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:14px">Semana 1</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Lun 8 – Dom 14 Jun 2026</div>
+        <div id="tipos-w1-total" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+      </div>
+      <div id="tipos-w1"></div>
+    </div>
+    <!-- Semana 2 -->
+    <div class="card" style="padding:20px">
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:14px">Semana 2</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Lun 15 – Dom 21 Jun 2026</div>
+        <div id="tipos-w2-total" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+      </div>
+      <div id="tipos-w2"></div>
+    </div>
+  </div>
+</div>
+
 </main>
 </div>
 
@@ -905,7 +946,7 @@ function fmtTime(s) {
 }
 function fmtClock(ts) {
   return new Date(ts * 1000).toLocaleTimeString('es-MX', {
-    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Chicago'
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Mexico_City'
   });
 }
 function speedClass(s, carry) {
@@ -1055,6 +1096,12 @@ function initRespondedor() {
     opt.value = s.sme; opt.textContent = `${s.n} (${s.tot} claims)`;
     sel.appendChild(opt);
   });
+  // Unresolved badge
+  if (UNRESOLVED_CLAIMS.length > 0) {
+    const badge = document.getElementById('badge-unresolved');
+    badge.textContent = UNRESOLVED_CLAIMS.length;
+    badge.style.display = '';
+  }
   // also populate filter in tiempos
   const fSme = document.getElementById('f-sme');
   smeList.forEach(s => {
@@ -1088,6 +1135,35 @@ function renderSmeDetail() {
       <div class="sme-stat-lbl">${k.lbl}</div>
     </div>`).join('');
 
+  // Claimed sin Resolved
+  const unresolvedForSme = UNRESOLVED_CLAIMS.filter(u => u.sme === code);
+  const unresWrap = document.getElementById('sme-unresolved-wrap');
+  if (unresolvedForSme.length > 0) {
+    unresWrap.innerHTML = `
+      <div class="alert alert-err" style="margin-bottom:14px">
+        <strong>⚠️ ${unresolvedForSme.length} caso(s) con Claim pero sin Resolved esta semana:</strong>
+        <div class="table-wrap" style="margin-top:8px">
+          <table>
+            <thead><tr>
+              <th>Día</th><th>Hora (CDMX)</th><th>Agente</th><th>Tipo</th><th>Nota</th>
+            </tr></thead>
+            <tbody>${unresolvedForSme.map(u => `<tr>
+              <td>${WEEK.dayNames[u.day]}</td>
+              <td style="font-family:monospace;font-size:11px">${new Date(u.subTs*1000).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Mexico_City'})}</td>
+              <td>${u.agent}</td>
+              <td style="font-size:11px;color:var(--text2)">${u.reqType}</td>
+              <td style="font-size:11px;color:var(--red)">${u.note}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } else {
+    unresWrap.innerHTML = `
+      <div class="alert alert-ok" style="margin-bottom:14px;font-size:11px">
+        ✅ <strong>Sin casos pendientes de resolver</strong> — todos los claims de ${SMES[code]?.n} tuvieron su Resolved esta semana.
+      </div>`;
+  }
+
   // Day bars
   const maxDay = Math.max(...WEEK.days.map(d => (g.bd[d]||[]).length));
   document.getElementById('sme-day-bars').innerHTML = WEEK.days.map(d => {
@@ -1111,6 +1187,7 @@ function renderSmeDetail() {
       <td style="text-align:right"><span class="pill ${speedClass(r.cs,r.carry)}">${speedLabel(r.cs,r.carry)}</span></td>
       <td style="text-align:right">${r.carry ? '<span class="pill pill-gray">—</span>' : `<span class="pill ${r.ans<120?'pill-green':r.ans<300?'pill-blue':'pill-amber'}">${fmtTime(r.ans)}</span>`}</td>
       <td style="text-align:right;font-weight:600">${r.total ? fmtTime(r.total) : '—'}</td>
+      <td><span class="pill pill-green" style="font-size:10px">✅ Resolved</span></td>
     </tr>`).join('');
 
   // Comparison chart
@@ -1247,7 +1324,8 @@ function renderHourPage() {
     return { h, cdmx, label: `${String(cdmx).padStart(2,'0')}:00`, count: bucket.length, avgCs };
   });
 
-  const total = hourData.reduce((a,h) => a+h.count, 0);
+  const total = recs.length;
+  const opsTotal = hourData.reduce((a,h) => a+h.count, 0);
   const maxCount = Math.max(...hourData.map(h => h.count));
   const peakHour = hourData.reduce((a,b) => b.count > a.count ? b : a);
   const active = hourData.filter(h => h.count > 0);
@@ -1325,7 +1403,7 @@ function renderHourPage() {
 
   // Detail table
   document.getElementById('tbl-by-hour').innerHTML = hourData.map(h => {
-    const pct = total > 0 ? ((h.count/total)*100).toFixed(1) : '0.0';
+    const pct = opsTotal > 0 ? ((h.count/opsTotal)*100).toFixed(1) : '0.0';
     const barW = maxCount > 0 ? ((h.count/maxCount)*100).toFixed(1) : 0;
     const isPeak = h.count === maxCount && h.count > 0;
     return `<tr style="${isPeak?'background:#fff5f7':''}">
@@ -1343,7 +1421,18 @@ function renderHourPage() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// GAPS PAGE — focuses on requests that took >15 min to be claimed
+// CASOS CLAIMED SIN RESOLVED — actualizar cada semana si hay alguno
+// Formato: { sme:'COD', day:15, subTs:1234567890, agent:'Nombre Agente',
+//             reqType:'General Second Opinion', note:'Descripción breve' }
+// Para esta semana: 0 casos encontrados (conteo Claims = Resolved)
+// ══════════════════════════════════════════════════════════════════
+const UNRESOLVED_CLAIMS = [
+  // Ejemplo de cómo agregar:
+  // { sme:'COD', day:16, subTs:1781640000, agent:'Agent Name',
+  //   reqType:'General Second Opinion', note:'Tomó claim pero no respondió' },
+];
+
+// ══════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════
 const GAP_THRESHOLD = 900; // 15 minutes in seconds
 
@@ -1623,6 +1712,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGaps();
   initPendientes();
   initHistorico();
+  initTipos();
 });
 
 // ══════════════════════════════════════════════════════════════════
@@ -1758,6 +1848,81 @@ function initHistorico() {
                x:{ grid:{display:false}, ticks:{font:{size:10}} } }
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TIPOS DE REQUEST PAGE — actualizar WEEKLY_DATA cada semana
+// ══════════════════════════════════════════════════════════════════
+// WEEKLY_DATA: agrega una entrada nueva cada semana.
+// Cada entrada tiene: label (título), n (total de requests), y types (array de temas).
+// Los types ya deben estar ordenados de mayor a menor por count.
+const WEEKLY_DATA = [
+  {
+    label: 'Semana 1 · Lun 8 – Dom 14 Jun 2026',
+    n: 334,
+    types: [
+      { label: 'General Second Opinion',    count: 139 },
+      { label: 'Process Clarification',     count: 81  },
+      { label: 'ID/DL Second Opinion',      count: 64  },
+      { label: 'Selfie Second Opinion',     count: 29  },
+      { label: 'Possible Misrouted Case',   count: 9   },
+      { label: 'HSL Concern Verification',  count: 9   },
+      { label: 'Seattle Dasher / Flag Spec+', count: 3 },
+    ]
+  },
+  {
+    label: 'Semana 2 · Lun 15 – Dom 21 Jun 2026',
+    n: 307,
+    types: [
+      { label: 'General Second Opinion',    count: 130 },
+      { label: 'Process Clarification',     count: 72  },
+      { label: 'ID/DL Second Opinion',      count: 64  },
+      { label: 'Selfie Second Opinion',     count: 26  },
+      { label: 'Possible Misrouted Case',   count: 10  },
+      { label: 'HSL Concern Verification',  count: 4   },
+      { label: 'Seattle Dasher / Flag Spec+', count: 1 },
+    ]
+  },
+  // Semana 3, 4... se agregan aquí con el mismo formato
+];
+
+function initTipos() {
+  // Renderiza las dos primeras semanas (W1 y W2)
+  renderSemana('tipos-w1', 'tipos-w1-total', WEEKLY_DATA[0]);
+  renderSemana('tipos-w2', 'tipos-w2-total', WEEKLY_DATA[1]);
+}
+
+function renderSemana(containerId, totalId, data) {
+  const { label, n, types } = data;
+  // Total label
+  document.getElementById(totalId).textContent = n + ' requests en total';
+
+  // Build rows — sorted already, just render
+  const rows = types.map((t, i) => {
+    const pct = (100 * t.count / n).toFixed(1);
+    const barW = (100 * t.count / types[0].count).toFixed(1);
+    const rankColors = ['#E3175B','#2563EB','#0E9663','#D97706','#7C3AED','#0891B2','#6B7280'];
+    const color = rankColors[i] || '#9ca3af';
+    return `
+      <tr>
+        <td style="width:24px;color:${color};font-weight:700;font-size:12px">${i+1}</td>
+        <td style="padding:10px 8px">
+          <div style="font-weight:600;font-size:13px;margin-bottom:5px">${t.label}</div>
+          <div style="background:var(--bg);border-radius:4px;height:6px;overflow:hidden">
+            <div style="background:${color};height:100%;width:${barW}%;border-radius:4px"></div>
+          </div>
+        </td>
+        <td style="text-align:right;white-space:nowrap;padding-left:12px">
+          <span style="font-weight:700;font-size:14px">${t.count}</span>
+          <div style="font-size:11px;color:var(--text2)">${pct}%</div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById(containerId).innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 </script>
 </body>
