@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDV Production · Dashboard Semanal · Lun 15 – Dom 21 Jun 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── RESET & BASE ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --dd-red:       #E3175B;
+  --dd-red-light: #fce8ef;
+  --dark:         #111318;
+  --dark2:        #1c1f27;
+  --sidebar-w:    230px;
+  --bg:           #F2F3F5;
+  --card:         #FFFFFF;
+  --border:       #E2E4E9;
+  --text:         #111318;
+  --text2:        #5A5F6E;
+  --text3:        #9096A8;
+  --green:        #0E9663;
+  --green-bg:     #E8F7F1;
+  --blue:         #2563EB;
+  --blue-bg:      #EEF3FE;
+  --amber:        #D97706;
+  --amber-bg:     #FEF3C7;
+  --red:          #DC2626;
+  --red-bg:       #FEE2E2;
+  --radius:       10px;
+  --shadow:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:    0 4px 12px rgba(0,0,0,.1);
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
+
+/* ── LAYOUT ─────────────────────────────────────────────────────── */
+.layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ────────────────────────────────────────────────────── */
+aside {
+  width: var(--sidebar-w); background: var(--dark); color: #fff;
+  display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-logo .app-name { font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--dd-red); }
+.sidebar-logo .week-label { font-size: 11px; color: rgba(255,255,255,.45);
+  margin-top: 3px; }
+
+nav { padding: 10px 0; flex: 1; }
+.nav-section { font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.3); padding: 12px 16px 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+  cursor: pointer; color: rgba(255,255,255,.6); font-size: 12.5px; font-weight: 500;
+  border-left: 2px solid transparent; transition: all .15s;
+}
+.nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+.nav-item.active { background: rgba(227,23,91,.15); color: #fff;
+  border-left-color: var(--dd-red); }
+.nav-item .icon { font-size: 15px; }
+.nav-item .badge-count {
+  margin-left: auto; font-size: 10px; font-weight: 700;
+  background: var(--dd-red); color: white;
+  padding: 1px 6px; border-radius: 20px;
+}
+
+.sidebar-footer {
+  padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.08);
+  font-size: 10px; color: rgba(255,255,255,.3); line-height: 1.7;
+}
+
+/* ── MAIN ────────────────────────────────────────────────────────── */
+main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+.page-header {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10; box-shadow: var(--shadow);
+}
+.page-header h1 { font-size: 16px; font-weight: 700; }
+.page-header .sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.chips { display: flex; gap: 6px; }
+.chip { font-size: 11px; padding: 3px 10px; border-radius: 20px;
+  background: var(--bg); border: 1px solid var(--border); color: var(--text2); }
+.chip.red { background: var(--red-bg); border-color: #fca5a5; color: var(--red); }
+.chip.green { background: var(--green-bg); border-color: #6ee7b7; color: var(--green); }
+
+.content { padding: 20px 24px; flex: 1; }
+
+/* PAGE visibility */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── CARDS ───────────────────────────────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.kpi-card {
+  background: var(--card); border-radius: var(--radius); padding: 16px 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden;
+}
+.kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: var(--dd-red); }
+.kpi-val { font-size: 32px; font-weight: 700; line-height: 1; color: var(--text); }
+.kpi-lbl { font-size: 12px; color: var(--text2); margin-top: 4px; font-weight: 500; }
+.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.card {
+  background: var(--card); border-radius: var(--radius); padding: 16px 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px;
+}
+.card-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text2); margin-bottom: 12px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ── TABLES ──────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  text-align: left; padding: 8px 10px; background: var(--bg);
+  font-size: 11px; font-weight: 600; color: var(--text2);
+  border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+  user-select: none;
+}
+thead th:hover { color: var(--text); }
+tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:hover td { background: #fafafa; }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ── PILLS / BADGES ──────────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  white-space: nowrap;
+}
+.pill-green  { background: var(--green-bg); color: var(--green); }
+.pill-blue   { background: var(--blue-bg); color: var(--blue); }
+.pill-amber  { background: var(--amber-bg); color: var(--amber); }
+.pill-red    { background: var(--red-bg); color: var(--red); }
+.pill-gray   { background: var(--bg); color: var(--text2); font-style: italic; }
+
+.sme-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 12px;
+  font-size: 11px; font-weight: 600; background: var(--bg); color: var(--text);
+  border-left: 3px solid #888;
+}
+
+/* ── CONTROLS ────────────────────────────────────────────────────── */
+.ctrl-row {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+select, input[type=text] {
+  height: 32px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); padding: 0 10px; font-size: 12px;
+  outline: none;
+}
+select:focus, input[type=text]:focus { border-color: var(--blue); }
+.ctrl-label { font-size: 11px; font-weight: 600; color: var(--text2); }
+
+.pag-row {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; margin-top: 10px; font-size: 12px; color: var(--text2);
+}
+.pag-row button {
+  height: 28px; padding: 0 12px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  cursor: pointer; font-size: 12px;
+}
+.pag-row button:disabled { opacity: .4; cursor: default; }
+.pag-row button:not(:disabled):hover { background: var(--bg); }
+
+/* ── HEATMAP ─────────────────────────────────────────────────────── */
+.hmap-container { overflow-x: auto; }
+.hmap-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7, 1fr);
+  gap: 3px;
+  min-width: 600px;
+}
+.hmap-header {
+  font-size: 10px; font-weight: 700; color: var(--text2);
+  padding: 4px 6px; text-align: center;
+}
+.hmap-label {
+  font-size: 10px; color: var(--text3); text-align: right;
+  padding: 3px 8px 3px 0; display: flex; align-items: center; justify-content: flex-end;
+}
+.hmap-cell {
+  border-radius: 4px; padding: 3px 4px; text-align: center;
+  font-size: 10px; font-weight: 700; line-height: 22px; height: 28px;
+  position: relative; cursor: default;
+}
+.hmap-cell:hover::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+  background: var(--dark); color: white; font-size: 10px; padding: 4px 8px;
+  border-radius: 6px; white-space: nowrap; z-index: 20; pointer-events: none;
+}
+.hmap-empty  { background: #F2F3F5; color: var(--text3); }
+.hmap-gap    { background: #FEE2E2; color: var(--red); }
+.hmap-low    { background: #BFDBFE; color: #1d4ed8; }
+.hmap-mid    { background: #60A5FA; color: white; }
+.hmap-high   { background: #2563EB; color: white; }
+.hmap-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text2);
+  margin-top: 10px; flex-wrap: wrap; align-items: center; }
+.legend-dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 4px; }
+
+/* ── BAR VIZ ─────────────────────────────────────────────────────── */
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.bar-label { font-size: 12px; min-width: 130px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+.bar-fill   { height: 100%; border-radius: 5px; }
+.bar-value  { font-size: 12px; font-weight: 700; min-width: 24px; text-align: right; }
+
+/* ── ALERT BOXES ─────────────────────────────────────────────────── */
+.alert {
+  border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px;
+  font-size: 12px; line-height: 1.6;
+}
+.alert-ok     { background: var(--green-bg); border: 1px solid #6ee7b7; }
+.alert-warn   { background: var(--amber-bg); border: 1px solid #fcd34d; }
+.alert-err    { background: var(--red-bg);   border: 1px solid #fca5a5; }
+.alert-info   { background: var(--blue-bg);  border: 1px solid #93c5fd; }
+.alert strong { font-weight: 700; }
+.alert .wait-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  background: var(--red); color: white; font-size: 11px; font-weight: 700;
+  margin: 0 4px;
+}
+
+/* ── SME SELECTOR ────────────────────────────────────────────────── */
+.sme-stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+.sme-stat { background: var(--bg); border-radius: 8px; padding: 10px 14px; }
+.sme-stat-val { font-size: 22px; font-weight: 700; }
+.sme-stat-lbl { font-size: 11px; color: var(--text2); }
+
+/* ── INFO BOX ────────────────────────────────────────────────────── */
+.info-box {
+  background: var(--card); border-radius: var(--radius); padding: 14px 18px;
+  border: 1px solid var(--border); margin-bottom: 16px; font-size: 12px;
+  line-height: 1.7; color: var(--text2);
+}
+.info-box strong { color: var(--text); }
+
+/* ── NOTE ────────────────────────────────────────────────────────── */
+.note { font-size: 11px; color: var(--text3); margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border); line-height: 1.6; }
+code { background: var(--bg); padding: 1px 5px; border-radius: 4px;
+  font-size: 11px; font-family: monospace; }
+
+/* ── CHART CONTAINERS ────────────────────────────────────────────── */
+.chart-box { position: relative; height: 200px; }
+.chart-box-lg { position: relative; height: 260px; }
+
+/* ── SCROLLABLE TABLE ────────────────────────────────────────────── */
+.table-scroll { max-height: 440px; overflow-y: auto; border: 1px solid var(--border);
+  border-radius: var(--radius); }
+.table-scroll thead th { position: sticky; top: 0; z-index: 1; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .sme-stat-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside>
+  <div class="sidebar-logo">
+    <div class="app-name">IDV Production</div>
+    <div class="week-label">Lun 15 – Dom 21 Jun 2026</div>
+    <div class="week-label" style="margin-top:2px">#mq-idv-production</div>
+  </div>
+
+  <nav>
+    <div class="nav-section">Métricas</div>
+    <div class="nav-item active" onclick="showPage('resumen',this)">
+      <span class="icon">📋</span> Resumen Semanal <span class="badge-count" id="badge-total">—</span>
+    </div>
+    <div class="nav-item" onclick="showPage('respondedor',this)">
+      <span class="icon">👤</span> Por Respondedor
+    </div>
+    <div class="nav-item" onclick="showPage('tiempos',this)">
+      <span class="icon">⏱</span> Registro de Tiempos
+    </div>
+
+    <div class="nav-section" style="margin-top:8px">Análisis</div>
+    <div class="nav-item" onclick="showPage('gaps',this)">
+      <span class="icon">⚡</span> Gaps de Cobertura
+    </div>
+    <div class="nav-item" onclick="showPage('pendientes',this)">
+      <span class="icon">🔴</span> Casos Pendientes <span class="badge-count">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('historico',this)">
+      <span class="icon">📈</span> Histórico Semanal
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    Horario Ops: 7:00–22:00 CDMX<br>
+    Total specialists: 27<br>
+    Datos: Slack Resolved notifications<br>
+    Actualizado: 21 Jun 2026
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════════ -->
+<main>
+
+<!-- ── PAGE: RESUMEN ─────────────────────────────────────────── -->
+<div id="page-resumen" class="page active">
+  <div class="page-header">
+    <div>
+      <h1>Resumen Semanal</h1>
+      <div class="sub">Lunes 15 Jun → Domingo 21 Jun 2026 · Métricas consolidadas</div>
+    </div>
+    <div class="chips">
+      <span class="chip green">27 specialists activos</span>
+      <span class="chip">Semana completa</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Requests por día</div>
+        <div class="chart-box"><canvas id="chart-daily"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Top 10 specialists por volumen</div>
+        <div id="top-sme-bars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Todos los specialists — resumen semanal</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th onclick="sortTable('tbl-sme',0)">Specialist ↕</th>
+            <th onclick="sortTable('tbl-sme',1)">Días activos</th>
+            <th onclick="sortTable('tbl-sme',2)" style="text-align:right">Claims ↕</th>
+            <th onclick="sortTable('tbl-sme',3)" style="text-align:right">Avg Claim ↕</th>
+            <th onclick="sortTable('tbl-sme',4)" style="text-align:right">Avg Respuesta ↕</th>
+            <th onclick="sortTable('tbl-sme',5)" style="text-align:right">Total avg ↕</th>
+          </tr></thead>
+          <tbody id="tbl-sme"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: RESPONDEDOR ──────────────────────────────────────── -->
+<div id="page-respondedor" class="page">
+  <div class="page-header">
+    <div><h1>Por Respondedor</h1><div class="sub">Selecciona un specialist para ver su actividad detallada</div></div>
+  </div>
+  <div class="content">
+    <div class="ctrl-row">
+      <span class="ctrl-label">Specialist:</span>
+      <select id="sme-select" onchange="renderSmeDetail()" style="min-width:220px">
+        <option value="">— Seleccionar specialist —</option>
+      </select>
+    </div>
+    <div id="sme-detail-placeholder" class="info-box" style="text-align:center;padding:40px;color:var(--text3)">
+      Selecciona un specialist del menú desplegable para ver su detalle completo.
+    </div>
+    <div id="sme-detail" style="display:none">
+      <div class="sme-stat-row" id="sme-kpis"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Claims por día</div>
+          <div id="sme-day-bars"></div>
+        </div>
+        <div class="card" style="overflow:auto;max-height:360px">
+          <div class="card-title">Detalle de todos sus requests</div>
+          <table>
+            <thead><tr><th>Día</th><th>Hora envío</th><th style="text-align:right">⏱ Claim</th><th style="text-align:right">💬 Respuesta</th><th style="text-align:right">Total</th></tr></thead>
+            <tbody id="sme-req-tbl"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Comparación: este specialist vs. promedio del equipo</div>
+        <div class="chart-box"><canvas id="chart-sme-compare"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: TIEMPOS ──────────────────────────────────────────── -->
+<div id="page-tiempos" class="page">
+  <div class="page-header">
+    <div><h1>Registro de Tiempos</h1><div class="sub">Todos los requests con tiempos de claim y respuesta</div></div>
+    <div class="chips"><span class="chip" id="chip-total-t">— registros</span></div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="ctrl-row">
+        <select id="f-sme" onchange="renderTimesTable()"><option value="">Todos los specialists</option></select>
+        <select id="f-day" onchange="renderTimesTable()">
+          <option value="">Todos los días</option>
+          <option value="8">Lun 8 Jun</option><option value="9">Mar 9 Jun</option>
+          <option value="10">Mié 10 Jun</option><option value="11">Jue 11 Jun</option>
+          <option value="12">Vie 12 Jun</option><option value="13">Sáb 13 Jun</option>
+          <option value="14">Dom 14 Jun</option>
+        </select>
+        <select id="f-speed" onchange="renderTimesTable()">
+          <option value="">Cualquier velocidad</option>
+          <option value="fast">⚡ &lt;30s (muy rápido)</option>
+          <option value="med">✓ 30s–2min (rápido)</option>
+          <option value="slow">⚠ 2–10min (moderado)</option>
+          <option value="vslow">🔴 &gt;10min (lento)</option>
+        </select>
+        <input type="text" id="f-search" placeholder="Buscar specialist…" oninput="renderTimesTable()" style="flex:1;min-width:120px">
+        <span style="font-size:11px;color:var(--text2)" id="t-count"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th onclick="tSort(0)">#</th>
+            <th onclick="tSort(1)">Día ↕</th>
+            <th onclick="tSort(2)">Hora ↕</th>
+            <th onclick="tSort(3)">Specialist ↕</th>
+            <th onclick="tSort(4)" style="text-align:right">⏱ Tiempo al Claim ↕</th>
+            <th onclick="tSort(5)" style="text-align:right">💬 Tiempo Respuesta ↕</th>
+            <th onclick="tSort(6)" style="text-align:right">Total ↕</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="tbl-times"></tbody>
+        </table>
+      </div>
+      <div class="pag-row">
+        <button id="pg-prev" onclick="tPg(-1)">← Anterior</button>
+        <span id="pg-info"></span>
+        <button id="pg-next" onclick="tPg(1)">Siguiente →</button>
+      </div>
+      <p class="note">* Tiempo Respuesta = promedio medido por specialist desde threads reales (1 muestra/specialist).
+        "est" = timestamp de claim estimado basado en promedio del specialist. Total = Claim + Respuesta.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: GAPS ─────────────────────────────────────────────── -->
+<div id="page-gaps" class="page">
+  <div class="page-header">
+    <div><h1>Gaps de Cobertura</h1><div class="sub">Requests que tardaron más de 15 min en ser tomados · señal de falta de cobertura</div></div>
+    <div class="chips"><span class="chip" id="chip-gap-count">—</span></div>
+  </div>
+  <div class="content">
+
+    <div class="info-box">
+      <strong>¿Qué es un gap de cobertura?</strong> Un gap ocurre cuando un request enviado dentro del horario de operación
+      (7:00 AM – 10:00 PM CDMX) tarda <strong>más de 15 minutos</strong> en ser tomado (claim) por algún specialist.
+      Esto indica que posiblemente no hay suficientes respondedores disponibles en ese horario.
+      Los casos overnight (enviados de noche sin respuesta hasta el día siguiente) aparecen en la sección <em>Casos Pendientes</em>.
+    </div>
+
+    <!-- KPI distribution -->
+    <div class="kpi-row" id="gap-kpis"></div>
+
+    <!-- Gap requests table -->
+    <div class="card">
+      <div class="card-title">🔴 Requests con espera &gt;15 min durante horario de operación</div>
+      <div id="gap-requests-wrap">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Día</th>
+              <th>Hora envío (CDMX)</th>
+              <th>Specialist que tomó</th>
+              <th style="text-align:right">⏱ Tiempo al claim</th>
+              <th style="text-align:right">💬 Resp. estimada</th>
+              <th style="text-align:right">Total espera</th>
+              <th>Contexto horario</th>
+            </tr></thead>
+            <tbody id="tbl-gap-requests"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="note">⚠ Estos son los únicos requests durante la semana donde algún agente esperó más de 15 min para recibir atención.
+        Un número bajo es buena señal de cobertura. Los overnight carryovers están en "Casos Pendientes".</p>
+    </div>
+
+    <!-- Chart: avg claim time by hour of day -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📈 Tiempo promedio de claim por hora del día (CDMX)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px">
+          Cada barra = promedio de todos los requests enviados en esa hora, durante la semana.
+          Barras rojas = promedio &gt;15 min (zona de riesgo de cobertura).
+        </div>
+        <div class="chart-box-lg"><canvas id="chart-gap-hour"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Distribución de velocidad de claim por día</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px">
+          Requests durante ops hours agrupados por qué tan rápido fueron tomados.
+        </div>
+        <div class="chart-box-lg"><canvas id="chart-gap-day"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Coverage window per day -->
+    <div class="card">
+      <div class="card-title">🕐 Ventana de cobertura real por día — Cuándo hay respondedores activos</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Día</th>
+            <th>Primer claim en ops (CDMX)</th>
+            <th>Último claim en ops (CDMX)</th>
+            <th style="text-align:right">Horas con cobertura</th>
+            <th style="text-align:right">Requests &gt;15 min</th>
+            <th style="text-align:right">Requests sin cobertura al cierre</th>
+          </tr></thead>
+          <tbody id="tbl-coverage-window"></tbody>
+        </table>
+      </div>
+      <p class="note">
+        "Horas con cobertura" = tiempo entre primer y último claim dentro de ops.<br>
+        "Requests sin cobertura al cierre" = submissions enviados después del último claim del día (riesgo de overnight).
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── PAGE: PENDIENTES ───────────────────────────────────────── -->
+<div id="page-pendientes" class="page">
+  <div class="page-header">
+    <div><h1>Casos Pendientes &amp; Sin Respuesta</h1><div class="sub">Carryovers overnight y esperas significativas</div></div>
+  </div>
+  <div class="content">
+    <div class="alert alert-ok">
+      ✅ <strong>Todos los casos de la semana recibieron respuesta.</strong>
+      No se encontraron requests completamente sin atender.
+      Los 3 casos documentados abajo tuvieron demoras significativas por falta de cobertura al final del horario operativo.
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌙 Casos con espera overnight (carryover)</div>
+      <div id="carryover-cards"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⏳ Top 10 — esperas más largas DENTRO de horario ops (no overnight)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Día</th><th>Hora envío (CST)</th><th>Specialist</th>
+            <th style="text-align:right">Tiempo al claim</th><th></th>
+          </tr></thead>
+          <tbody id="tbl-longwaits"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔍 Metodología — Cómo detectar casos sin respuesta</div>
+      <div class="info-box" style="margin-bottom:0">
+        <strong>Para semanas futuras:</strong> Busca en Slack todos los mensajes de submission y filtra los que NO tienen
+        <code>[SME] clicked *Claim*</code> en el cuerpo del mensaje padre.<br><br>
+        <strong>Query Slack:</strong> <code>Needs Assistance in:#mq-idv-production on:YYYY-MM-DD</code><br>
+        Cualquier mensaje que termine sin el texto de claim = caso potencialmente sin atender.<br><br>
+        <strong>Criterios de alerta:</strong>
+        <ul style="margin-top:6px;padding-left:18px;font-size:12px">
+          <li>Request enviado dentro de horario ops sin claim en 30+ min → GAP de cobertura</li>
+          <li>Request sin claim al finalizar el día → posible overnight</li>
+          <li>Request sin ningún claim registrado → sin respuesta</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: HISTÓRICO ────────────────────────────────────────── -->
+<div id="page-historico" class="page">
+  <div class="page-header">
+    <div><h1>Histórico Semanal</h1><div class="sub">Comparativa semana a semana · #mq-idv-production</div></div>
+    <div class="chips"><span class="chip" id="chip-hist-weeks">— semanas</span></div>
+  </div>
+  <div class="content">
+
+    <div class="info-box" id="hist-notice"></div>
+
+    <!-- KPI trend table -->
+    <div class="card">
+      <div class="card-title">📊 Métricas por semana</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Semana</th>
+            <th style="text-align:right">Total requests</th>
+            <th style="text-align:right">Specialists</th>
+            <th style="text-align:right">Avg Claim</th>
+            <th style="text-align:right">Avg Respuesta</th>
+            <th style="text-align:right">Total avg</th>
+            <th style="text-align:right">Gaps &gt;15 min</th>
+            <th style="text-align:right">Carryovers</th>
+          </tr></thead>
+          <tbody id="tbl-hist"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trend charts -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📦 Total requests por semana</div>
+        <div class="chart-box-lg"><canvas id="chart-hist-total"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⏱ Avg tiempo al claim por semana</div>
+        <div class="chart-box-lg"><canvas id="chart-hist-claim"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔴 Gaps de cobertura (&gt;15 min) por semana</div>
+        <div class="chart-box-lg"><canvas id="chart-hist-gaps"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Distribución de requests por día de semana (todas las semanas)</div>
+        <div class="chart-box-lg"><canvas id="chart-hist-dow"></canvas></div>
+      </div>
+    </div>
+
+    <!-- How to add a new week -->
+    <div class="card">
+      <div class="card-title">➕ Cómo agregar una nueva semana al histórico</div>
+      <div class="info-box" style="margin-bottom:0">
+        <strong>Proceso cada lunes:</strong><br>
+        1. Recolectar datos de la semana que terminó (ver skill <code>idv-weekly-dashboard</code>)<br>
+        2. En el array <code>HISTORICAL_DATA</code> del HTML, agregar un nuevo objeto con los datos de esa semana<br>
+        3. Actualizar <code>RAW</code>, <code>WEEK</code> y <code>DS</code> con los datos de la semana actual<br>
+        4. Guardar con nombre actualizado: <code>IDV_Dashboard_Lun{DD}_Dom{DD}_{Mes}{AAAA}.html</code><br><br>
+        <strong>Formato del objeto histórico:</strong><br>
+        <pre style="background:var(--bg);padding:10px;border-radius:6px;font-size:11px;overflow-x:auto;margin-top:6px">{
+  id: 'w2026-23',              // ISO semana
+  label: 'Lun 8 – Dom 14 Jun',
+  total: 335,                  // total requests
+  smes: 27,                    // specialists únicos
+  avgClaim: 53,                // segundos avg al claim
+  avgAns: 351,                 // segundos avg de respuesta
+  gapCount: 1,                 // requests con claim >15 min
+  carryovers: 3,               // casos overnight
+  byDay: {8:53, 9:55, 10:48, 11:42, 12:45, 13:31, 14:60},
+}</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ═══════════ JAVASCRIPT ══════════════════════════════════════ -->
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURATION — actualiza estas constantes cada semana
+// ══════════════════════════════════════════════════════════════════
+const WEEK = {
+  label:    'Lun 15 – Dom 21 Jun 2026',
+  days:     [15,16,17,18,19,20,21],
+  dayNames: {15:'Lun 15/Jun', 16:'Mar 16/Jun', 17:'Mié 17/Jun', 18:'Jue 18/Jun',
+             19:'Vie 19/Jun', 20:'Sáb 20/Jun', 21:'Dom 21/Jun'},
+  dayShort: {15:'L15', 16:'M16', 17:'X17', 18:'J18', 19:'V19', 20:'S20', 21:'D21'},
+};
+const OPS_H0 = 6;
+const OPS_H1 = 21;
+// Unix timestamps: medianoche CST para cada día
+const DS = {15:1781503200,16:1781589600,17:1781676000,18:1781762400,
+            19:1781848800,20:1781935200,21:1782021600};
+
+// ── SPECIALISTS ────────────────────────────────────────────────────
+// avgAns = avg seconds from claim to actual thread answer (measured from sample threads)
+const SMES = {
+  AIM:{n:'Aimee Lindsey',    c:'#9F85DD',a:258}, JAM:{n:'James Wade',       c:'#1D9E75',a:218},
+  MEM:{n:'Memo K',           c:'#3266AD',a:321}, DAN:{n:'Dani Dowdy',       c:'#EF9F27',a: 57},
+  DIA:{n:'Diana Chavez',     c:'#D85A30',a:337}, GAB:{n:'Gabby N.',         c:'#D4537E',a:651},
+  GCR:{n:'Gabriel C.Reyes',  c:'#0F6E56',a:281}, MAY:{n:'MaY',             c:'#A06010',a:288},
+  BRI:{n:'Bri Dillon',       c:'#7F77DD',a:222}, SHA:{n:'Shaunte Roby',    c:'#888780',a:856},
+  ARA:{n:'Arantxa Soto',     c:'#E24B4A',a:572}, CCP:{n:'Cecilia CC Pop',  c:'#639922',a:412},
+  TRE:{n:'Trey Satcher',     c:'#993C1D',a:241}, MIS:{n:'Micah Smith',     c:'#378ADD',a:355},
+  BCK:{n:'Becca Hofheins',   c:'#BA7517',a:374}, SAV:{n:'Savannah Durrant',c:'#4B9E8F',a:252},
+  EMA:{n:'Emma Martinez',    c:'#1D4E89',a:290}, PJA:{n:'Princess Johnson',c:'#534AB7',a:327},
+  WHI:{n:'whitney',          c:'#72243E',a:240}, BTG:{n:'Brittany Gomez',  c:'#A04080',a:240},
+  ESF:{n:'Emma Sue Farley',  c:'#2A7040',a:300}, DEV:{n:'David Evans',     c:'#5F5E5A',a:480},
+  PDA:{n:'pauladaniela.n',   c:'#4B1528',a:300}, VIC:{n:'Victoria Gonzalez',c:'#805030',a:300},
+  JAL:{n:'Jalána',           c:'#304070',a:240}, JWI:{n:'Jessica Williams',c:'#702030',a:300},
+  DUL:{n:'dulce.marquez',    c:'#507020',a:240},
+  // NUEVOS esta semana
+  LIS:{n:'Lissie',           c:'#E87B3A',a:300},
+  DPN:{n:'dulce.paniagua',   c:'#7B4B99',a:300},
+  DGF:{n:'Diego F',          c:'#2C7A50',a:300},
+};
+
+// ── RAW DATA: [submittedTs, claimedTs, smeCode] ────────
+const RAW = [
+  // Lun 15 Jun (43)
+  [1781538371,1781538383,'WHI'],[1781540102,1781540114,'AIM'],[1781543152,1781543177,'AIM'],
+  [1781544286,1781544391,'BTG'],[1781545024,1781545178,'MEM'],[1781545101,1781545183,'WHI'],
+  [1781545784,1781545834,'BTG'],[1781546352,1781546429,'BTG'],[1781546681,1781546994,'MEM'],
+  [1781547659,1781547663,'GAB'],[1781547940,1781547990,'BRI'],[1781548809,1781548933,'BRI'],
+  [1781549246,1781549397,'BRI'],[1781549909,1781549917,'GAB'],[1781551490,1781551507,'BRI'],
+  [1781551647,1781551659,'GAB'],[1781551819,1781551828,'BRI'],[1781551842,1781552039,'BRI'],
+  [1781553170,1781553196,'BRI'],[1781553696,1781553705,'BRI'],[1781553965,1781553976,'DIA'],
+  [1781555436,1781555477,'DIA'],[1781555526,1781555561,'GAB'],[1781555637,1781555670,'GAB'],
+  [1781556949,1781557011,'GAB'],[1781558123,1781558133,'GAB'],[1781559289,1781559308,'BRI'],
+  [1781559295,1781559318,'GAB'],[1781559745,1781559750,'BRI'],[1781560191,1781560198,'GAB'],
+  [1781562121,1781562196,'DAN'],[1781563326,1781563365,'DAN'],[1781563677,1781563686,'DAN'],
+  [1781563920,1781563926,'DAN'],[1781566013,1781566018,'DAN'],[1781566520,1781566610,'DAN'],
+  [1781568008,1781568016,'DAN'],[1781568936,1781568993,'MEM'],[1781569177,1781569590,'DAN'],
+  [1781569667,1781569731,'MEM'],[1781570609,1781570619,'DAN'],[1781572115,1781572123,'DAN'],
+  [1781573781,1781574102,'MEM'],
+  // Mar 16 Jun (52) — 6 GAPS >15min cluster 12:34-14:04 CST
+  [1781623336,1781623446,'EMA'],[1781623556,1781623589,'BCK'],[1781624130,1781624285,'DIA'],
+  [1781624677,1781624734,'DIA'],[1781625038,1781625063,'DIA'],[1781626989,1781627004,'EMA'],
+  [1781627618,1781627653,'EMA'],[1781628541,1781628578,'DIA'],[1781628978,1781629237,'MEM'],
+  [1781630828,1781630970,'MEM'],[1781631615,1781631676,'DIA'],[1781631908,1781631978,'MEM'],
+  [1781632753,1781632778,'MEM'],[1781632756,1781632790,'DIA'],[1781632857,1781633133,'DIA'],
+  [1781633092,1781633246,'DIA'],[1781633219,1781633441,'DIA'],[1781634470,1781634475,'JAM'],
+  [1781634925,1781634985,'MEM'],[1781635072,1781635112,'LIS'],[1781635557,1781635566,'LIS'],
+  [1781636306,1781636314,'JAM'],[1781638671,1781639334,'MEM'],[1781638712,1781639429,'MEM'],
+  [1781638788,1781639661,'MEM'],[1781638813,1781639811,'MEM'],[1781638862,1781639974,'LIS'],
+  [1781638867,1781640028,'MEM'],[1781639071,1781640045,'JAM'],[1781639095,1781640289,'MEM'],
+  [1781639341,1781640385,'LIS'],[1781639872,1781640503,'MEM'],[1781640664,1781640671,'JAM'],
+  [1781640959,1781640978,'DIA'],[1781641033,1781641069,'MEM'],[1781641228,1781641245,'DIA'],
+  [1781643622,1781643628,'JAM'],[1781644023,1781644111,'LIS'],[1781644314,1781644318,'JAM'],
+  [1781644397,1781644439,'MEM'],[1781646163,1781646171,'JAM'],[1781647103,1781647204,'DIA'],
+  [1781647852,1781647863,'DIA'],[1781647853,1781647866,'JAM'],[1781648072,1781648082,'JAM'],
+  [1781650559,1781650589,'ESF'],[1781654905,1781654924,'ESF'],[1781655106,1781655139,'MEM'],
+  [1781655240,1781655344,'ESF'],[1781655324,1781655504,'MEM'],[1781655366,1781655669,'ESF'],
+  [1781656068,1781656387,'MEM'],[1781656562,1781656851,'PDA'],
+  // Mié 17 Jun (53)
+  [1781705387,1781705395,'DIA'],[1781705577,1781705585,'DIA'],[1781707051,1781707142,'DIA'],
+  [1781707131,1781707174,'DIA'],[1781710068,1781710078,'DIA'],[1781711048,1781711121,'DIA'],
+  [1781711391,1781711503,'DIA'],[1781711657,1781711672,'DIA'],[1781711803,1781711812,'BCK'],
+  [1781713190,1781713229,'BCK'],[1781713449,1781713461,'DIA'],[1781713585,1781713650,'DIA'],
+  [1781713628,1781713710,'PJA'],[1781714273,1781714283,'DIA'],[1781715037,1781715154,'BCK'],
+  [1781715521,1781715552,'PJA'],[1781716674,1781717047,'DIA'],[1781717195,1781717275,'DIA'],
+  [1781717406,1781717666,'DIA'],[1781717531,1781717860,'DIA'],[1781717614,1781717963,'DIA'],
+  [1781718231,1781718266,'DIA'],[1781718243,1781718406,'DIA'],[1781718394,1781718496,'DIA'],
+  [1781718459,1781718861,'DIA'],[1781718882,1781718935,'DIA'],[1781719175,1781719199,'DIA'],
+  [1781721785,1781722189,'JAM'],[1781722261,1781722989,'JWI'],[1781722586,1781723092,'JAM'],
+  [1781725016,1781725206,'JAM'],[1781725086,1781725342,'JAM'],[1781725488,1781725588,'JAM'],
+  [1781725519,1781725760,'JAM'],[1781725814,1781725842,'JAM'],[1781730117,1781730236,'DIA'],
+  [1781730706,1781730759,'JAM'],[1781733036,1781733171,'DIA'],[1781733338,1781733387,'DIA'],
+  [1781733538,1781733611,'DIA'],[1781735112,1781735206,'JAM'],[1781735993,1781736210,'DIA'],
+  [1781736164,1781736340,'ESF'],[1781736418,1781736656,'VIC'],[1781736557,1781736766,'ESF'],
+  [1781740535,1781740569,'ESF'],[1781741762,1781741899,'VIC'],[1781741841,1781741994,'PDA'],
+  [1781742186,1781742248,'VIC'],[1781742860,1781743185,'ESF'],[1781745029,1781745052,'ESF'],
+  [1781745738,1781745805,'PDA'],[1781760438,1781760578,'PDA'],
+  // Jue 18 Jun (48)
+  [1781791841,1781791886,'ARA'],[1781793733,1781793775,'DIA'],[1781794691,1781794711,'DIA'],
+  [1781796882,1781796893,'DIA'],[1781798378,1781798424,'DIA'],[1781798747,1781798839,'DIA'],
+  [1781799456,1781799550,'DIA'],[1781800289,1781800315,'DIA'],[1781800571,1781800588,'DIA'],
+  [1781800880,1781800893,'DIA'],[1781801284,1781801312,'DIA'],[1781801303,1781801367,'ARA'],
+  [1781801317,1781801445,'DIA'],[1781801640,1781801650,'DIA'],[1781801776,1781801817,'DIA'],
+  [1781801811,1781801856,'ARA'],[1781801849,1781801997,'ARA'],[1781802677,1781802718,'GCR'],
+  [1781802883,1781802907,'GCR'],[1781803724,1781803759,'DIA'],[1781804798,1781804804,'GCR'],
+  [1781805356,1781805367,'DIA'],[1781805546,1781805552,'GCR'],[1781808748,1781809026,'LIS'],
+  [1781809220,1781809251,'GCR'],[1781809231,1781809541,'JWI'],[1781809406,1781809577,'LIS'],
+  [1781811074,1781811127,'GCR'],[1781811222,1781811276,'GCR'],[1781813170,1781813195,'LIS'],
+  [1781813576,1781813710,'DIA'],[1781815553,1781815559,'GCR'],[1781815763,1781815780,'GCR'],
+  [1781815771,1781815994,'DIA'],[1781815874,1781816082,'DIA'],[1781822767,1781822825,'DIA'],
+  [1781824143,1781824223,'SAV'],[1781826709,1781826722,'GCR'],[1781827291,1781827644,'GCR'],
+  [1781827636,1781827646,'GCR'],[1781827719,1781828013,'GCR'],[1781827953,1781828074,'PDA'],
+  [1781828234,1781828321,'GCR'],[1781828573,1781828607,'GCR'],[1781829059,1781829091,'SAV'],
+  [1781832125,1781832175,'SAV'],[1781834339,1781839430,'DPN'],[1781834822,1781839505,'DPN'],
+  // Vie 19 Jun (56)
+  [1781878088,1781878174,'JAL'],[1781879983,1781880001,'JAL'],[1781880364,1781880984,'JAL'],
+  [1781880900,1781881119,'JAL'],[1781881140,1781881301,'JAL'],[1781883418,1781883570,'GAB'],
+  [1781883588,1781883802,'MAY'],[1781883721,1781884033,'MAY'],[1781884330,1781884487,'MAY'],
+  [1781886925,1781887033,'GAB'],[1781887748,1781887871,'MAY'],[1781887876,1781888118,'EMA'],
+  [1781888429,1781888518,'LIS'],[1781888722,1781888740,'EMA'],[1781888753,1781889020,'EMA'],
+  [1781889807,1781889825,'GCR'],[1781890090,1781890117,'GCR'],[1781890107,1781890131,'GCR'],
+  [1781890108,1781890604,'GCR'],[1781890763,1781891062,'GCR'],[1781891083,1781891146,'GCR'],
+  [1781891130,1781891334,'MAY'],[1781892183,1781892314,'GCR'],[1781892866,1781892921,'SAV'],
+  [1781893013,1781893024,'MAY'],[1781893081,1781893096,'GCR'],[1781893269,1781893286,'GCR'],
+  [1781893342,1781893466,'TRE'],[1781893580,1781893593,'GCR'],[1781894179,1781894198,'SAV'],
+  [1781894199,1781894206,'GCR'],[1781894704,1781894758,'SAV'],[1781897050,1781897141,'MAY'],
+  [1781897964,1781897973,'SAV'],[1781898945,1781899080,'SAV'],[1781899784,1781899808,'SAV'],
+  [1781899797,1781899981,'SAV'],[1781900011,1781900117,'GCR'],[1781900577,1781900612,'SAV'],
+  [1781900986,1781901004,'SAV'],[1781901232,1781901240,'GCR'],[1781901272,1781901288,'GCR'],
+  [1781905527,1781905534,'GCR'],[1781913781,1781913935,'SAV'],[1781914500,1781914511,'SAV'],
+  [1781914595,1781914625,'SAV'],[1781915000,1781915024,'SAV'],[1781915083,1781915098,'GCR'],
+  [1781915135,1781915235,'GCR'],[1781915287,1781915297,'SAV'],[1781916311,1781916330,'GCR'],
+  [1781916679,1781916694,'SAV'],[1781916745,1781916784,'SAV'],[1781917043,1781917110,'SAV'],
+  [1781917677,1781917692,'SAV'],[1781921218,1781932542,'DGF'],
+  // Sáb 20 Jun (26)
+  [1781964958,1781965046,'ARA'],[1781970215,1781970233,'MAY'],[1781970646,1781970653,'ARA'],
+  [1781971734,1781971740,'EMA'],[1781971964,1781971970,'ARA'],[1781972663,1781972672,'MAY'],
+  [1781974094,1781974217,'EMA'],[1781977352,1781977402,'GCR'],[1781979088,1781979285,'GCR'],
+  [1781980243,1781980294,'MAY'],[1781983865,1781983876,'CCP'],[1781984154,1781984235,'GCR'],
+  [1781986902,1781986940,'CCP'],[1781987689,1781987706,'CCP'],[1781988587,1781988768,'GCR'],
+  [1781989760,1781989810,'TRE'],[1781990514,1781990555,'TRE'],[1781990610,1781990722,'JAL'],
+  [1781990733,1781990831,'JAL'],[1781990793,1781990869,'GCR'],[1781990976,1781991028,'JAL'],
+  [1781992208,1781992336,'CCP'],[1781993395,1781993416,'TRE'],[1781995276,1781995290,'CCP'],
+  [1782000281,1782000330,'CCP'],[1782002507,1782002518,'GCR'],
+  // Dom 21 Jun (28 — 1 GAP 18min)
+  [1782051864,1782051902,'BTG'],[1782054898,1782054909,'DIA'],[1782060458,1782061545,'DIA'],
+  [1782062225,1782062262,'BTG'],[1782064052,1782064076,'DIA'],[1782064323,1782064426,'DIA'],
+  [1782064589,1782064704,'DIA'],[1782067144,1782067190,'DIA'],[1782067856,1782067870,'GAB'],
+  [1782068514,1782068543,'BRI'],[1782068918,1782068936,'GAB'],[1782070356,1782070507,'GAB'],
+  [1782070743,1782070767,'BRI'],[1782070754,1782071226,'BRI'],[1782072504,1782072513,'BRI'],
+  [1782072787,1782072848,'BRI'],[1782075892,1782075901,'GAB'],[1782077578,1782077585,'DAN'],
+  [1782078106,1782078120,'DAN'],[1782078137,1782078200,'DAN'],[1782079218,1782079227,'DAN'],
+  [1782080106,1782080112,'DAN'],[1782080373,1782080377,'DAN'],[1782080658,1782080675,'BRI'],
+  [1782081106,1782081130,'DIA'],[1782084151,1782084155,'PDA'],[1782085975,1782085996,'PDA'],
+  [1782091554,1782091569,'DAN'],
+];
+
+// ══════════════════════════════════════════════════════════════════
+// DATA PROCESSING
+// ══════════════════════════════════════════════════════════════════
+function getDay(ts) {
+  for (const [d, s] of Object.entries(DS)) {
+    if (ts >= s && ts < s + 86400) return +d;
+  }
+  return 21;
+}
+function fmtTime(s) {
+  if (s < 0) return '—';
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60), r = s % 60;
+  return r ? `${m}m ${r}s` : `${m}m`;
+}
+function fmtClock(ts) {
+  return new Date(ts * 1000).toLocaleTimeString('es-MX', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Chicago'
+  });
+}
+function speedClass(s, carry) {
+  if (carry) return 'pill-gray';
+  if (s < 30) return 'pill-green';
+  if (s < 120) return 'pill-blue';
+  if (s < 600) return 'pill-amber';
+  return 'pill-red';
+}
+function speedLabel(s, carry) {
+  if (carry) return 'Carryover';
+  if (s < 30) return '⚡ ' + fmtTime(s);
+  if (s < 120) return '✓ ' + fmtTime(s);
+  if (s < 600) return '⚠ ' + fmtTime(s);
+  return '🔴 ' + fmtTime(s);
+}
+
+// Process all records
+const DATA = RAW.map(([sub, claim, sme, est = 0], i) => {
+  const cs = claim - sub;
+  const day = getDay(sub);
+  const carry = cs > 28800;
+  const opsStart = DS[day] + OPS_H0 * 3600;
+  const opsEnd   = DS[day] + OPS_H1 * 3600;
+  const inOps    = sub >= opsStart && sub < opsEnd;
+  const ans      = carry ? null : (SMES[sme]?.a || 300);
+  return { id: i+1, sub, claim, cs, ans, day, sme,
+           n: SMES[sme]?.n || sme, c: SMES[sme]?.c || '#888',
+           carry, inOps, est: !!est,
+           total: (!carry && ans != null) ? cs + ans : null };
+});
+
+// Group by day
+const byDay = {};
+WEEK.days.forEach(d => { byDay[d] = []; });
+DATA.forEach(r => { if (byDay[r.day]) byDay[r.day].push(r); });
+
+// Group by SME
+const bySme = {};
+DATA.forEach(r => {
+  if (!bySme[r.sme]) bySme[r.sme] = { sme: r.sme, n: r.n, c: r.c, days: new Set(), all: [], valid: [], bd: {} };
+  bySme[r.sme].days.add(r.day);
+  bySme[r.sme].all.push(r);
+  if (!r.carry) bySme[r.sme].valid.push(r);
+  if (!bySme[r.sme].bd[r.day]) bySme[r.sme].bd[r.day] = [];
+  bySme[r.sme].bd[r.day].push(r);
+});
+
+const smeList = Object.values(bySme).map(g => {
+  const vc = g.valid.map(r => r.cs), va = g.valid.map(r => SMES[g.sme]?.a || 300);
+  const ac = vc.length ? Math.round(vc.reduce((a,b) => a+b, 0) / vc.length) : 0;
+  const aa = va.length ? Math.round(va.reduce((a,b) => a+b, 0) / va.length) : 0;
+  return { ...g, ac, aa, tot: g.all.length, at: ac + aa };
+}).sort((a, b) => b.tot - a.tot);
+
+const validData = DATA.filter(r => !r.carry);
+const avgClaimAll = Math.round(validData.reduce((a,r) => a + r.cs, 0) / validData.length);
+const avgAnsAll   = Math.round(validData.reduce((a,r) => a + (SMES[r.sme]?.a||300), 0) / validData.length);
+
+// ══════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════════
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT RESUMEN PAGE
+// ══════════════════════════════════════════════════════════════════
+function initResumen() {
+  document.getElementById('badge-total').textContent = DATA.length;
+
+  // KPI cards
+  const kpiEl = document.getElementById('kpi-row');
+  const kpis = [
+    { val: DATA.length,         lbl: 'Total requests semana', sub: 'Lun 15 – Dom 21 Jun' },
+    { val: smeList.length,      lbl: 'Specialists activos',   sub: '26 respondedores únicos' },
+    { val: fmtTime(avgClaimAll),lbl: 'Avg tiempo al Claim',   sub: 'Submission → bot notification' },
+    { val: fmtTime(avgAnsAll),  lbl: 'Avg tiempo Respuesta',  sub: 'Claim → respuesta real en thread' },
+  ];
+  kpiEl.innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  // Daily chart
+  const dailyCounts = WEEK.days.map(d => byDay[d].length);
+  const ctx = document.getElementById('chart-daily').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: WEEK.days.map(d => WEEK.dayShort[d]),
+      datasets: [{
+        data: dailyCounts,
+        backgroundColor: '#E3175B',
+        borderRadius: 5, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#F2F3F5' }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Top SME bars
+  const topEl = document.getElementById('top-sme-bars');
+  const maxTot = smeList[0].tot;
+  topEl.innerHTML = smeList.slice(0, 10).map(s => `
+    <div class="bar-row">
+      <div class="bar-label" title="${s.n}">${s.n}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(s.tot/maxTot*100).toFixed(1)}%;background:${s.c}"></div>
+      </div>
+      <div class="bar-value">${s.tot}</div>
+    </div>`).join('');
+
+  // SME table
+  const tb = document.getElementById('tbl-sme');
+  tb.innerHTML = smeList.map(s => `
+    <tr>
+      <td><span class="sme-badge" style="border-left-color:${s.c}">${s.n}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${[...s.days].sort().map(d => WEEK.dayShort[d]).join(' · ')}</td>
+      <td style="text-align:right;font-weight:700">${s.tot}</td>
+      <td style="text-align:right"><span class="pill ${speedClass(s.ac,false)}">${fmtTime(s.ac)}</span></td>
+      <td style="text-align:right"><span class="pill ${s.aa<120?'pill-green':s.aa<300?'pill-blue':s.aa<600?'pill-amber':'pill-red'}">${fmtTime(s.aa)}</span></td>
+      <td style="text-align:right;font-weight:600">${fmtTime(s.at)}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RESPONDEDOR PAGE
+// ══════════════════════════════════════════════════════════════════
+let compareChart = null;
+function initRespondedor() {
+  const sel = document.getElementById('sme-select');
+  smeList.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.sme; opt.textContent = `${s.n} (${s.tot} claims)`;
+    sel.appendChild(opt);
+  });
+  // also populate filter in tiempos
+  const fSme = document.getElementById('f-sme');
+  smeList.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.sme; opt.textContent = s.n;
+    fSme.appendChild(opt);
+  });
+}
+
+function renderSmeDetail() {
+  const code = document.getElementById('sme-select').value;
+  if (!code) return;
+  const g = bySme[code];
+  if (!g) return;
+
+  document.getElementById('sme-detail-placeholder').style.display = 'none';
+  document.getElementById('sme-detail').style.display = 'block';
+
+  const ac = g.valid.length ? Math.round(g.valid.reduce((a,r) => a+r.cs,0)/g.valid.length) : 0;
+  const aa = SMES[code]?.a || 300;
+
+  // KPIs
+  document.getElementById('sme-kpis').innerHTML = [
+    { val: g.tot,         lbl: 'Total claims', color: g.c },
+    { val: [...g.days].length, lbl: 'Días activos' },
+    { val: fmtTime(ac),   lbl: 'Avg Claim' },
+    { val: fmtTime(aa),   lbl: 'Avg Respuesta (muestra)' },
+  ].map(k => `
+    <div class="sme-stat">
+      <div class="sme-stat-val" style="${k.color?'color:'+k.color:''}">${k.val}</div>
+      <div class="sme-stat-lbl">${k.lbl}</div>
+    </div>`).join('');
+
+  // Day bars
+  const maxDay = Math.max(...WEEK.days.map(d => (g.bd[d]||[]).length));
+  document.getElementById('sme-day-bars').innerHTML = WEEK.days.map(d => {
+    const cnt = (g.bd[d]||[]).length;
+    const pct = maxDay > 0 ? (cnt/maxDay*100).toFixed(1) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label">${WEEK.dayNames[d]}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${g.c}"></div>
+      </div>
+      <div class="bar-value">${cnt || ''}</div>
+    </div>`;
+  }).join('');
+
+  // Request table
+  document.getElementById('sme-req-tbl').innerHTML = g.all
+    .sort((a,b) => a.sub - b.sub)
+    .map(r => `<tr>
+      <td>${WEEK.dayNames[r.day]}</td>
+      <td style="font-size:11px">${fmtClock(r.sub)}</td>
+      <td style="text-align:right"><span class="pill ${speedClass(r.cs,r.carry)}">${speedLabel(r.cs,r.carry)}</span></td>
+      <td style="text-align:right">${r.carry ? '<span class="pill pill-gray">—</span>' : `<span class="pill ${r.ans<120?'pill-green':r.ans<300?'pill-blue':'pill-amber'}">${fmtTime(r.ans)}</span>`}</td>
+      <td style="text-align:right;font-weight:600">${r.total ? fmtTime(r.total) : '—'}</td>
+    </tr>`).join('');
+
+  // Comparison chart
+  if (compareChart) compareChart.destroy();
+  const ctx2 = document.getElementById('chart-sme-compare').getContext('2d');
+  compareChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Avg Claim', 'Avg Respuesta', 'Total avg'],
+      datasets: [
+        { label: SMES[code]?.n, data: [ac, aa, ac+aa], backgroundColor: g.c, borderRadius: 4 },
+        { label: 'Promedio equipo', data: [avgClaimAll, avgAnsAll, avgClaimAll+avgAnsAll], backgroundColor: '#E2E4E9', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, ticks: {
+          callback: v => fmtTime(v), font: { size: 10 }
+        }},
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TIEMPOS PAGE
+// ══════════════════════════════════════════════════════════════════
+let tFiltered = [...DATA], tPage = 0, tSortCol = 4, tSortDir = 1;
+const T_PG = 50;
+
+function renderTimesTable() {
+  const fSme   = document.getElementById('f-sme')?.value || '';
+  const fDay   = document.getElementById('f-day')?.value || '';
+  const fSpeed = document.getElementById('f-speed')?.value || '';
+  const fQ     = (document.getElementById('f-search')?.value || '').toLowerCase();
+
+  tFiltered = DATA.filter(r => {
+    if (fSme && r.sme !== fSme) return false;
+    if (fDay && r.day !== +fDay) return false;
+    if (fSpeed) {
+      const s = r.cs;
+      if (fSpeed === 'fast'  && (r.carry || s >= 30))  return false;
+      if (fSpeed === 'med'   && (r.carry || s < 30 || s >= 120)) return false;
+      if (fSpeed === 'slow'  && (r.carry || s < 120 || s >= 600)) return false;
+      if (fSpeed === 'vslow' && s < 600) return false;
+    }
+    if (fQ && !r.n.toLowerCase().includes(fQ)) return false;
+    return true;
+  });
+
+  tFiltered.sort((a, b) => {
+    const vals = [a.id, a.day, a.sub, a.n, a.cs, a.ans||9999, a.total||9999];
+    const valsB= [b.id, b.day, b.sub, b.n, b.cs, b.ans||9999, b.total||9999];
+    return (vals[tSortCol] > valsB[tSortCol] ? 1 : -1) * tSortDir;
+  });
+
+  const tp = Math.max(1, Math.ceil(tFiltered.length / T_PG));
+  if (tPage >= tp) tPage = tp - 1;
+  const slice = tFiltered.slice(tPage * T_PG, (tPage + 1) * T_PG);
+
+  document.getElementById('tbl-times').innerHTML = slice.map(r => `
+    <tr>
+      <td style="color:var(--text3)">${r.id}</td>
+      <td>${WEEK.dayShort[r.day]}</td>
+      <td style="font-size:11px;font-family:monospace">${fmtClock(r.sub)}</td>
+      <td><span class="sme-badge" style="border-left-color:${r.c}">${r.n}</span></td>
+      <td style="text-align:right"><span class="pill ${speedClass(r.cs,r.carry)}">${speedLabel(r.cs,r.carry)}</span></td>
+      <td style="text-align:right">${r.carry
+        ? '<span class="pill pill-gray">—</span>'
+        : `<span class="pill ${r.ans<120?'pill-green':r.ans<300?'pill-blue':r.ans<600?'pill-amber':'pill-red'}">${fmtTime(r.ans)}</span>`
+      }</td>
+      <td style="text-align:right;font-weight:700">${r.total ? fmtTime(r.total) : '—'}</td>
+      <td style="font-size:10px;color:var(--text3)">${r.est ? 'est' : ''}</td>
+    </tr>`).join('');
+
+  document.getElementById('t-count').textContent = `${tFiltered.length} registros`;
+  document.getElementById('chip-total-t').textContent = `${tFiltered.length} registros`;
+  document.getElementById('pg-info').textContent = `Pág ${tPage+1} / ${tp}`;
+  document.getElementById('pg-prev').disabled = tPage === 0;
+  document.getElementById('pg-next').disabled = tPage >= tp - 1;
+}
+function tSort(col) {
+  tSortDir = tSortCol === col ? -tSortDir : 1;
+  tSortCol = col; tPage = 0; renderTimesTable();
+}
+function tPg(d) { tPage += d; renderTimesTable(); }
+
+// Table sort helper
+let tableSortState = {};
+function sortTable(id, col) {
+  const tb = document.getElementById(id);
+  const rows = Array.from(tb.rows);
+  const dir  = tableSortState[id+col] === 1 ? -1 : 1;
+  tableSortState[id+col] = dir;
+  rows.sort((a, b) => {
+    const va = a.cells[col].textContent.trim();
+    const vb = b.cells[col].textContent.trim();
+    const na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return (na - nb) * dir;
+    return va.localeCompare(vb) * dir;
+  });
+  rows.forEach(r => tb.appendChild(r));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAPS PAGE — focuses on requests that took >15 min to be claimed
+// ══════════════════════════════════════════════════════════════════
+const GAP_THRESHOLD = 900; // 15 minutes in seconds
+
+function initGaps() {
+  const opsRecs = DATA.filter(r => r.inOps && !r.carry);
+
+  // Bucket each record
+  const bucket = r => {
+    if (r.cs < 60)   return 'ultra';   // <1 min
+    if (r.cs < 300)  return 'fast';    // 1–5 min
+    if (r.cs < 900)  return 'med';     // 5–15 min
+    return 'gap';                       // >15 min = coverage gap
+  };
+
+  const counts = { ultra: 0, fast: 0, med: 0, gap: 0 };
+  opsRecs.forEach(r => counts[bucket(r)]++);
+  const total = opsRecs.length;
+  const pct = n => total > 0 ? ((n/total)*100).toFixed(1) + '%' : '0%';
+
+  // KPI cards
+  document.getElementById('gap-kpis').innerHTML = [
+    { val: counts.ultra, sub: pct(counts.ultra), lbl: '⚡ Tomados en &lt;1 min',   cls: 'pill-green',  bar: '#0E9663' },
+    { val: counts.fast,  sub: pct(counts.fast),  lbl: '✓ Tomados en 1–5 min',  cls: 'pill-blue',   bar: '#2563EB' },
+    { val: counts.med,   sub: pct(counts.med),   lbl: '⚠ Tomados en 5–15 min', cls: 'pill-amber',  bar: '#D97706' },
+    { val: counts.gap,   sub: pct(counts.gap),   lbl: '🔴 Gap &gt;15 min — sin cobertura', cls: 'pill-red', bar: '#DC2626' },
+  ].map(k => `
+    <div class="kpi-card" style="border-top-color:${k.bar}">
+      <div class="kpi-val" style="color:${k.bar}">${k.val}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-sub">${k.sub} del total en ops</div>
+    </div>`).join('');
+
+  // Badge in header
+  document.getElementById('chip-gap-count').textContent =
+    counts.gap === 0 ? '✅ Sin gaps esta semana' : `🔴 ${counts.gap} gap(s) identificados`;
+  document.getElementById('chip-gap-count').className =
+    'chip ' + (counts.gap === 0 ? 'green' : 'red');
+
+  // Gap requests table
+  const gapRecs = opsRecs.filter(r => r.cs >= GAP_THRESHOLD).sort((a,b) => b.cs - a.cs);
+  if (gapRecs.length === 0) {
+    document.getElementById('gap-requests-wrap').innerHTML = `
+      <div class="alert alert-ok">
+        ✅ <strong>¡Excelente cobertura!</strong> Esta semana no hubo ningún request durante horario
+        de operación que tardara más de 15 minutos en ser tomado. Todos los requests fueron atendidos
+        con rapidez.
+      </div>`;
+  } else {
+    const cdmxHour = ts => {
+      const d = new Date(ts * 1000);
+      return d.toLocaleTimeString('es-MX', {
+        hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Mexico_City'
+      });
+    };
+    const context = r => {
+      const h = new Date(r.sub * 1000).getHours(); // local, approximate
+      const csth = Math.floor((r.sub - DS[r.day]) / 3600);
+      if (csth < 8)  return '🌅 Inicio de turno (pocos SMEs)';
+      if (csth >= 18) return '🌆 Final de turno (SMEs saliendo)';
+      return '🕐 Horario pico — cola acumulada';
+    };
+    document.getElementById('tbl-gap-requests').innerHTML = gapRecs.map(r => `
+      <tr>
+        <td><strong>${WEEK.dayNames[r.day]}</strong></td>
+        <td style="font-family:monospace">${cdmxHour(r.sub)}</td>
+        <td><span class="sme-badge" style="border-left-color:${r.c}">${r.n}</span></td>
+        <td style="text-align:right"><span class="pill pill-red">🔴 ${fmtTime(r.cs)}</span></td>
+        <td style="text-align:right"><span class="pill pill-amber">${fmtTime(r.ans)}</span></td>
+        <td style="text-align:right;font-weight:700">${r.total ? fmtTime(r.total) : '—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${context(r)}</td>
+      </tr>`).join('');
+  }
+
+  // Chart: avg claim time by CDMX hour
+  const hourBuckets = {};
+  for (let h = OPS_H0; h < OPS_H1; h++) {
+    const cdmxH = h + 1; // CST → CDMX
+    const recs = opsRecs.filter(r => {
+      const rh = Math.floor((r.sub - DS[r.day]) / 3600);
+      return rh === h;
+    });
+    if (recs.length > 0) {
+      hourBuckets[cdmxH] = Math.round(recs.reduce((a, r) => a + r.cs, 0) / recs.length);
+    } else {
+      hourBuckets[cdmxH] = null;
+    }
+  }
+  const hourLabels = Object.keys(hourBuckets).map(h => `${String(h).padStart(2,'0')}:00`);
+  const hourVals   = Object.values(hourBuckets);
+  const hourColors = hourVals.map(v => v === null ? '#E2E4E9' : v >= 900 ? '#DC2626' : v >= 300 ? '#D97706' : '#0E9663');
+
+  new Chart(document.getElementById('chart-gap-hour').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: hourLabels,
+      datasets: [{
+        label: 'Avg segundos al claim',
+        data: hourVals,
+        backgroundColor: hourColors,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw != null ? `Avg: ${fmtTime(ctx.raw)}` : 'Sin datos'
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Segundos', font: { size: 10 } },
+          ticks: { callback: v => fmtTime(v), font: { size: 10 } },
+          grid: { color: '#F2F3F5' }
+        },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Chart: claim speed distribution per day
+  const dayLabels = WEEK.days.map(d => WEEK.dayShort[d]);
+  const dayCounts = (bucketKey) => WEEK.days.map(d =>
+    (byDay[d] || []).filter(r => r.inOps && !r.carry && bucket(r) === bucketKey).length
+  );
+
+  new Chart(document.getElementById('chart-gap-day').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: dayLabels,
+      datasets: [
+        { label: '<1 min',    data: dayCounts('ultra'), backgroundColor: '#0E9663', borderRadius: 2 },
+        { label: '1–5 min',  data: dayCounts('fast'),  backgroundColor: '#2563EB', borderRadius: 2 },
+        { label: '5–15 min', data: dayCounts('med'),   backgroundColor: '#D97706', borderRadius: 2 },
+        { label: '>15 min 🔴',data: dayCounts('gap'),  backgroundColor: '#DC2626', borderRadius: 2 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: '#F2F3F5' } }
+      }
+    }
+  });
+
+  // Coverage window per day
+  document.getElementById('tbl-coverage-window').innerHTML = WEEK.days.map(d => {
+    const opsStart = DS[d] + OPS_H0 * 3600;
+    const opsEnd   = DS[d] + OPS_H1 * 3600;
+    const recs     = byDay[d] || [];
+    const opsClaims = recs.filter(r => r.claim >= opsStart && r.claim < opsEnd && !r.carry)
+                          .map(r => r.claim).sort((a,b) => a - b);
+    const opsSubs   = recs.filter(r => r.sub >= opsStart && r.sub < opsEnd);
+    const gapCount  = opsSubs.filter(r => !r.carry && r.cs >= GAP_THRESHOLD).length;
+
+    const firstC = opsClaims[0] || null;
+    const lastC  = opsClaims[opsClaims.length - 1] || null;
+    const hoursActive = (firstC && lastC) ? ((lastC - firstC) / 3600).toFixed(1) : '—';
+    const subsAfterLast = lastC ? recs.filter(r => r.sub > lastC && r.sub < opsEnd).length : 0;
+
+    const cdmxClock = ts => new Date(ts * 1000).toLocaleTimeString('es-MX', {
+      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Mexico_City'
+    });
+
+    return `<tr>
+      <td><strong>${WEEK.dayNames[d]}</strong></td>
+      <td style="font-family:monospace">${firstC ? cdmxClock(firstC) : '—'}</td>
+      <td style="font-family:monospace">${lastC  ? cdmxClock(lastC)  : '—'}</td>
+      <td style="text-align:right"><strong>${hoursActive}</strong> hrs</td>
+      <td style="text-align:right">
+        <span class="pill ${gapCount > 0 ? 'pill-red' : 'pill-green'}">${gapCount}</span>
+      </td>
+      <td style="text-align:right">
+        <span class="pill ${subsAfterLast > 0 ? 'pill-amber' : 'pill-green'}">${subsAfterLast}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PENDIENTES PAGE
+// ══════════════════════════════════════════════════════════════════
+function initPendientes() {
+  const carryovers = [
+    {
+      day: 18, sme: 'DPN', reqBy: 'Oscar Martinez',
+      subDate: 'Jue 18 Jun · 19:59 CST (20:59 CDMX)',
+      clDate:  'Jue 18 Jun · 21:24 CST (22:24 CDMX)',
+      wait: '1h 25m', cls: 'alert-warn',
+      icon: '🌆',
+      summary: 'Request enviado a las 20:59 CDMX (dentro de ops). Sin SME disponible. dulce.paniagua lo atendió mismo día 1h25m después.',
+      context: 'Oscar Martinez enviado al final del turno activo sin cobertura disponible.'
+    },
+    {
+      day: 18, sme: 'DPN', reqBy: 'fredy.barranco',
+      subDate: 'Jue 18 Jun · 20:06 CST (21:06 CDMX)',
+      clDate:  'Jue 18 Jun · 21:25 CST (22:25 CDMX)',
+      wait: '1h 18m', cls: 'alert-warn',
+      icon: '🌆',
+      summary: 'Request enviado a las 21:06 CDMX (dentro de ops). Sin SME disponible. dulce.paniagua lo atendió mismo día 1h18m después.',
+      context: 'Segundo caso del cluster tardío del Jue 18 Jun.'
+    },
+    {
+      day: 19, sme: 'DGF', reqBy: 'Hezz',
+      subDate: 'Vie 19 Jun · 20:06 CST (21:06 CDMX)',
+      clDate:  'Vie 19 Jun · 23:15 CST (00:15 CDMX+1)',
+      wait: '3h 8m', cls: 'alert-err',
+      icon: '🌙',
+      summary: 'Request enviado a las 21:06 CDMX (dentro de ops). Sin SME disponible. Diego F lo atendió 3h después.',
+      context: 'Hezz envió request al final del turno viernes. Sin cobertura hasta Diego F en la madrugada.'
+    },
+  ];
+
+  document.getElementById('carryover-cards').innerHTML = carryovers.map(c => `
+    <div class="alert ${c.cls}" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="font-weight:700;font-size:13px">
+          ${c.icon} ${SMES[c.sme]?.n} tomó el caso
+          <span class="wait-badge">${c.wait} de espera</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2)">${WEEK.dayNames[c.day]} · Solicitante: <strong>${c.reqBy}</strong></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;color:var(--text2);margin-bottom:8px">
+        <div>📤 <strong>Enviado:</strong> ${c.subDate}</div>
+        <div>✅ <strong>Atendido:</strong> ${c.clDate}</div>
+      </div>
+      <div style="font-size:12px">${c.summary}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;font-style:italic">${c.context}</div>
+    </div>`).join('');
+
+  // Top 10 longest waits during ops
+  const longWaits = DATA
+    .filter(r => r.cs > 1800 && !r.carry && r.inOps)
+    .sort((a, b) => b.cs - a.cs)
+    .slice(0, 10);
+
+  document.getElementById('tbl-longwaits').innerHTML = longWaits.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">Sin datos de espera larga dentro de horario ops.</td></tr>'
+    : longWaits.map(r => `<tr>
+        <td>${WEEK.dayNames[r.day]}</td>
+        <td style="font-family:monospace;font-size:11px">${fmtClock(r.sub)}</td>
+        <td><span class="sme-badge" style="border-left-color:${r.c}">${r.n}</span></td>
+        <td style="text-align:right"><span class="pill ${speedClass(r.cs,false)}">${fmtTime(r.cs)}</span></td>
+        <td style="font-size:10px;color:var(--text3)">${r.est ? '(estimado)' : ''}</td>
+      </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HISTORICAL DATA — agregar semana anterior aquí cada lunes
+// Formato: {id, label, total, smes, avgClaim, avgAns, gapCount, carryovers, byDay}
+// ══════════════════════════════════════════════════════════════════
+const HISTORICAL_DATA = [
+  // Semana anterior Lun 8 – Dom 14 Jun 2026
+  {
+    id: 'w2026-23',
+    label: 'Lun 8 – Dom 14 Jun',
+    total: 335, smes: 27, avgClaim: 53, avgAns: 351,
+    gapCount: 1, carryovers: 3,
+    byDay: {8:53, 9:55, 10:48, 11:42, 12:45, 13:31, 14:60},
+  },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// BOOTSTRAP
+// ══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initResumen();
+  initRespondedor();
+  renderTimesTable();
+  initGaps();
+  initPendientes();
+  initHistorico();
+});
+
+// ══════════════════════════════════════════════════════════════════
+// HISTÓRICO PAGE
+// ══════════════════════════════════════════════════════════════════
+function initHistorico() {
+  // Build the full weeks array: historical + current week
+  const currentWeek = {
+    id: 'current',
+    label: WEEK.label,
+    total: DATA.length,
+    smes: smeList.length,
+    avgClaim: avgClaimAll,
+    avgAns: avgAnsAll,
+    gapCount: DATA.filter(r => r.inOps && !r.carry && r.cs >= 900).length,
+    carryovers: DATA.filter(r => r.carry).length,
+    byDay: Object.fromEntries(WEEK.days.map(d => [d, (byDay[d]||[]).length])),
+    isCurrent: true,
+  };
+
+  const allWeeks = [...HISTORICAL_DATA, currentWeek];
+
+  document.getElementById('chip-hist-weeks').textContent =
+    `${allWeeks.length} semana${allWeeks.length > 1 ? 's' : ''}`;
+
+  // Notice
+  const noticeEl = document.getElementById('hist-notice');
+  if (allWeeks.length === 1) {
+    noticeEl.innerHTML = `<strong>Primera semana registrada.</strong> El histórico se irá
+      construyendo semana a semana. La próxima vez que actualices el dashboard, agrega los datos
+      de esta semana al array <code>HISTORICAL_DATA</code> para ver la comparativa.`;
+    noticeEl.style.cssText = 'background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:12px 16px;font-size:12px;margin-bottom:16px';
+  } else {
+    noticeEl.style.display = 'none';
+  }
+
+  // Table
+  const DOW_LABELS = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom',
+                       8:'Lun',9:'Mar',10:'Mié',11:'Jue',12:'Vie',13:'Sáb',14:'Dom'};
+  document.getElementById('tbl-hist').innerHTML = allWeeks.map((w, i) => {
+    const isLast = i > 0;
+    const prev   = i > 0 ? allWeeks[i-1] : null;
+    const diff   = (cur, old) => {
+      if (!prev) return '';
+      const d = cur - old;
+      const sign = d > 0 ? '▲' : d < 0 ? '▼' : '=';
+      const color = sign === '▲' ? '#0E9663' : sign === '▼' ? '#DC2626' : '#999';
+      return `<span style="font-size:10px;color:${color};margin-left:4px">${sign}${Math.abs(d)}</span>`;
+    };
+    return `<tr ${w.isCurrent ? 'style="background:#FFFBF0;font-weight:600"' : ''}>
+      <td>${w.label}${w.isCurrent ? ' <span class="chip" style="font-size:10px;padding:1px 6px">actual</span>' : ''}</td>
+      <td style="text-align:right">${w.total}${diff(w.total, prev?.total)}</td>
+      <td style="text-align:right">${w.smes}</td>
+      <td style="text-align:right"><span class="pill pill-blue">${fmtTime(w.avgClaim)}</span>${diff(-w.avgClaim, -(prev?.avgClaim||0))}</td>
+      <td style="text-align:right"><span class="pill pill-blue">${fmtTime(w.avgAns)}</span></td>
+      <td style="text-align:right">${fmtTime(w.avgClaim + w.avgAns)}</td>
+      <td style="text-align:right"><span class="pill ${w.gapCount>0?'pill-red':'pill-green'}">${w.gapCount}</span></td>
+      <td style="text-align:right"><span class="pill ${w.carryovers>0?'pill-amber':'pill-green'}">${w.carryovers}</span></td>
+    </tr>`;
+  }).join('');
+
+  const labels  = allWeeks.map(w => w.label);
+  const barColor = allWeeks.map(w => w.isCurrent ? '#E3175B' : '#93c5fd');
+
+  // Chart: total requests
+  new Chart(document.getElementById('chart-hist-total').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: allWeeks.map(w=>w.total), backgroundColor: barColor, borderRadius:4 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{beginAtZero:true, ticks:{font:{size:10}}, grid:{color:'#F2F3F5'}},
+               x:{ grid:{display:false}, ticks:{font:{size:10}} } }
+    }
+  });
+
+  // Chart: avg claim
+  new Chart(document.getElementById('chart-hist-claim').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label:'Avg Claim (seg)', data: allWeeks.map(w=>w.avgClaim),
+        borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,.1)',
+        pointRadius:5, pointBackgroundColor: barColor, tension:0.3, fill:true,
+      }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{beginAtZero:true, ticks:{callback:v=>fmtTime(v), font:{size:10}}, grid:{color:'#F2F3F5'}},
+               x:{ grid:{display:false}, ticks:{font:{size:10}} } }
+    }
+  });
+
+  // Chart: gaps
+  new Chart(document.getElementById('chart-hist-gaps').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label:'Gaps >15 min', data: allWeeks.map(w=>w.gapCount),
+        backgroundColor: allWeeks.map(w=>w.gapCount>0?'#DC2626':'#0E9663'), borderRadius:4 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{beginAtZero:true, ticks:{font:{size:10}}, grid:{color:'#F2F3F5'}},
+               x:{ grid:{display:false}, ticks:{font:{size:10}} } }
+    }
+  });
+
+  // Chart: avg by day of week (all historical + current)
+  const dowLabels = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const dowAvg = dowLabels.map((_, idx) => {
+    const vals = allWeeks.map(w => {
+      const keys = Object.keys(w.byDay);
+      const key = keys[idx];
+      return key ? w.byDay[key] : null;
+    }).filter(v => v != null);
+    return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  });
+
+  new Chart(document.getElementById('chart-hist-dow').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: dowLabels,
+      datasets:[{ label:'Avg requests', data:dowAvg,
+        backgroundColor:'#3266AD', borderRadius:4 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{beginAtZero:true, ticks:{font:{size:10}}, grid:{color:'#F2F3F5'}},
+               x:{ grid:{display:false}, ticks:{font:{size:10}} } }
+    }
+  });
+}
+</script>
+</body>
+</html>
