@@ -784,8 +784,8 @@ const WEEK = {
              19:'Vie 19/Jun', 20:'Sáb 20/Jun', 21:'Dom 21/Jun'},
   dayShort: {15:'L15', 16:'M16', 17:'X17', 18:'J18', 19:'V19', 20:'S20', 21:'D21'},
 };
-const OPS_H0 = 6;
-const OPS_H1 = 21;
+const OPS_H0 = 7;   // 7 AM CDMX (México City, UTC-6 permanente, sin DST)
+const OPS_H1 = 22;  // 10 PM CDMX
 // Unix timestamps: medianoche CST para cada día
 const DS = {15:1781503200,16:1781589600,17:1781676000,18:1781762400,
             19:1781848800,20:1781935200,21:1782021600};
@@ -1318,7 +1318,7 @@ function renderHourPage() {
   for (let h = OPS_H0; h < OPS_H1; h++) hours.push(h);
 
   const hourData = hours.map(h => {
-    const cdmx = h + 1;
+    const cdmx = h;  // h ya es hora CDMX (offset desde DS = medianoche México City)
     const bucket = recs.filter(r => Math.floor((r.sub - DS[r.day]) / 3600) === h);
     const avgCs = bucket.length ? Math.round(bucket.reduce((a,r) => a+r.cs,0)/bucket.length) : 0;
     return { h, cdmx, label: `${String(cdmx).padStart(2,'0')}:00`, count: bucket.length, avgCs };
@@ -1391,13 +1391,13 @@ function renderHourPage() {
   const cellColor = n => n===0?'#F2F3F5':n<=3?'#BFDBFE':n<=7?'#60A5FA':n<=12?'#2563EB':'#1E3A8A';
 
   hours.forEach(h => {
-    const cdmx = h + 1;
+    const cdmx = h;  // ya en hora CDMX
     hmap.innerHTML += `<div style="font-size:10px;color:var(--text3);text-align:right;padding:3px 6px 3px 0;display:flex;align-items:center;justify-content:flex-end">${String(cdmx).padStart(2,'0')}:00</div>`;
     hmDays.forEach(d => {
       const cnt = DATA.filter(r => r.day===d && Math.floor((r.sub-DS[r.day])/3600)===h).length;
       const bg = cellColor(cnt);
       const color = cnt > 7 ? 'white' : 'var(--text)';
-      hmap.innerHTML += `<div style="background:${bg};color:${color};border-radius:4px;text-align:center;font-size:10px;font-weight:700;height:26px;line-height:26px" title="${WEEK.dayNames[d]} ${String(cdmx).padStart(2,'0')}:00 — ${cnt} requests">${cnt||''}</div>`;
+      hmap.innerHTML += `<div style="background:${bg};color:${color};border-radius:4px;text-align:center;font-size:10px;font-weight:700;height:26px;line-height:26px" title="${WEEK.dayNames[d]} ${String(cdmx).padStart(2,'0')}:00 CDMX — ${cnt} requests">${cnt||''}</div>`;
     });
   });
 
@@ -1488,10 +1488,9 @@ function initGaps() {
       });
     };
     const context = r => {
-      const h = new Date(r.sub * 1000).getHours(); // local, approximate
       const csth = Math.floor((r.sub - DS[r.day]) / 3600);
-      if (csth < 8)  return '🌅 Inicio de turno (pocos SMEs)';
-      if (csth >= 18) return '🌆 Final de turno (SMEs saliendo)';
+      if (csth < 9)   return '🌅 Inicio de turno (pocos SMEs activos)';
+      if (csth >= 20) return '🌆 Final de turno (SMEs saliendo)';
       return '🕐 Horario pico — cola acumulada';
     };
     document.getElementById('tbl-gap-requests').innerHTML = gapRecs.map(r => `
@@ -1509,7 +1508,7 @@ function initGaps() {
   // Chart: avg claim time by CDMX hour
   const hourBuckets = {};
   for (let h = OPS_H0; h < OPS_H1; h++) {
-    const cdmxH = h + 1; // CST → CDMX
+    const cdmxH = h;  // h ya es hora CDMX — DS = medianoche México City (UTC-6)
     const recs = opsRecs.filter(r => {
       const rh = Math.floor((r.sub - DS[r.day]) / 3600);
       return rh === h;
@@ -1625,29 +1624,29 @@ function initPendientes() {
   const carryovers = [
     {
       day: 18, sme: 'DPN', reqBy: 'Oscar Martinez',
-      subDate: 'Jue 18 Jun · 19:59 CST (20:59 CDMX)',
-      clDate:  'Jue 18 Jun · 21:24 CST (22:24 CDMX)',
+      subDate: 'Jue 18 Jun · 20:59 CDMX',
+      clDate:  'Jue 18 Jun · 22:24 CDMX',
       wait: '1h 25m', cls: 'alert-warn',
       icon: '🌆',
-      summary: 'Request enviado a las 20:59 CDMX (dentro de ops). Sin SME disponible. dulce.paniagua lo atendió mismo día 1h25m después.',
-      context: 'Oscar Martinez enviado al final del turno activo sin cobertura disponible.'
+      summary: 'Request enviado a las 20:59 CDMX (dentro de ops). Sin SME disponible. dulce.paniagua lo atendió mismo día 1h 25m después.',
+      context: 'Oscar Martinez envió al final del turno activo sin cobertura disponible.'
     },
     {
       day: 18, sme: 'DPN', reqBy: 'fredy.barranco',
-      subDate: 'Jue 18 Jun · 20:06 CST (21:06 CDMX)',
-      clDate:  'Jue 18 Jun · 21:25 CST (22:25 CDMX)',
+      subDate: 'Jue 18 Jun · 21:06 CDMX',
+      clDate:  'Jue 18 Jun · 22:25 CDMX',
       wait: '1h 18m', cls: 'alert-warn',
       icon: '🌆',
-      summary: 'Request enviado a las 21:06 CDMX (dentro de ops). Sin SME disponible. dulce.paniagua lo atendió mismo día 1h18m después.',
+      summary: 'Request enviado a las 21:06 CDMX (dentro de ops). Sin SME disponible. dulce.paniagua lo atendió mismo día 1h 18m después.',
       context: 'Segundo caso del cluster tardío del Jue 18 Jun.'
     },
     {
       day: 19, sme: 'DGF', reqBy: 'Hezz',
-      subDate: 'Vie 19 Jun · 20:06 CST (21:06 CDMX)',
-      clDate:  'Vie 19 Jun · 23:15 CST (00:15 CDMX+1)',
+      subDate: 'Vie 19 Jun · 21:06 CDMX',
+      clDate:  'Vie 20 Jun · 00:15 CDMX',
       wait: '3h 8m', cls: 'alert-err',
       icon: '🌙',
-      summary: 'Request enviado a las 21:06 CDMX (dentro de ops). Sin SME disponible. Diego F lo atendió 3h después.',
+      summary: 'Request enviado a las 21:06 CDMX (dentro de ops). Sin SME disponible. Diego F lo atendió 3h después, ya entrada la madrugada.',
       context: 'Hezz envió request al final del turno viernes. Sin cobertura hasta Diego F en la madrugada.'
     },
   ];
